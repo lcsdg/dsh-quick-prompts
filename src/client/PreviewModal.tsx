@@ -94,9 +94,9 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
                   <div key={field.name} className={css.placeholderRow}>
                     <span className={css.placeholderName}>{`{{${field.name}}}`}</span>
                     <input
-                      className={css.smallInput}
+                      className={`${css.smallInput} ${css.placeholderInput}`}
                       value={values[field.name] ?? ''}
-                      placeholder={field.name}
+                      placeholder={t('preview.fillValue')}
                       onChange={(e) => setValues((prev) => ({ ...prev, [field.name]: e.target.value }))}
                     />
                   </div>

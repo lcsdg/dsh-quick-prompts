@@ -433,6 +433,11 @@
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
+/* placeholder fill inputs: explicit border so the row reads as an input */
+.placeholderInput {
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 20%, transparent);
+}
+
 .hint {
   font-size: 11px;
   line-height: 16px;
