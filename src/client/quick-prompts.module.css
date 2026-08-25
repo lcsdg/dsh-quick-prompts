@@ -258,20 +258,23 @@
   overflow-y: auto;
 }
 
-/* one bordered card per functional area inside the modals */
+/* one bordered card per functional area inside the modals — border and
+   background are mixed from the theme's label color so they stay clearly
+   visible in both light and dark themes (border-l1 alone is ~4% and too
+   faint to read). */
 .fieldSection {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 10px;
-  border: 1px solid var(--dsw-alias-border-l1);
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 16%, transparent);
   border-radius: 10px;
-  background: var(--dsw-alias-fill-secondary, transparent);
+  background: color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 4%, transparent);
 }
 
 /* divider above the action button row */
 .actionsDivider {
-  border-top: 1px solid var(--dsw-alias-border-l1);
+  border-top: 1px solid color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 16%, transparent);
   padding-top: 12px;
 }
 
