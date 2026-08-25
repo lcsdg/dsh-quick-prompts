@@ -1,6 +1,12 @@
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots';
 import type { PromptItem } from '../types.ts';
 import type { QuickPromptsKey } from './locales.ts';
+/**
+ * Render template text with every `{{placeholder}}` span wrapped in the
+ * orange highlight style. Used by the read-only preview boxes and by the
+ * highlight layer underneath the editable textarea.
+ */
+export declare function renderHighlighted(text: string): React.ReactNode[];
 export type SyncMode = 'append' | 'replace';
 /** What the modal hands back on a sync/send action. */
 export interface PreviewResult {

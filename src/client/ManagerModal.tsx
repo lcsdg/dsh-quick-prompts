@@ -12,6 +12,7 @@ import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-clie
 import type { PromptCategory, PromptItem, QuickPromptsSettings } from '../types.ts'
 import { normalizeSettings } from '../types.ts'
 import type { QuickPromptsKey } from './locales.ts'
+import { renderHighlighted } from './PreviewModal.tsx'
 import css from './quick-prompts.module.css'
 
 export interface ManagerModalProps extends PropsLocale<'quick-prompts'> {
@@ -357,7 +358,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                       </div>
                       <div className={css.previewWrap}>
                         {item.text !== '' ? (
-                          <pre className={css.previewBox}>{item.text}</pre>
+                          <pre className={css.previewBox}>{renderHighlighted(item.text)}</pre>
                         ) : (
                           <span className={css.previewEmpty}>{t('manager.textField')}</span>
                         )}

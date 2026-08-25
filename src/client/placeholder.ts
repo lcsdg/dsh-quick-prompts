@@ -11,7 +11,10 @@ export interface PlaceholderField {
   name: string
 }
 
-const PLACEHOLDER_RE = /\{\{\s*([^{}]+?)\s*\}\}/g
+/** Global pattern so callers can also use String.matchAll for highlighting. */
+export const PLACEHOLDER_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/g
+
+const PLACEHOLDER_RE = PLACEHOLDER_PATTERN
 
 /**
  * Extract the distinct placeholder names from a template, in first-appearance

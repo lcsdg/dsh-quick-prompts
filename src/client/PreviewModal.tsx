@@ -7,9 +7,27 @@
 import { useMemo, useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PromptItem } from '../types.ts'
-import { extractPlaceholders, fillPlaceholders } from './placeholder.ts'
+import { PLACEHOLDER_PATTERN, extractPlaceholders, fillPlaceholders } from './placeholder.ts'
 import type { QuickPromptsKey } from './locales.ts'
 import css from './quick-prompts.module.css'
+
+/**
+ * Render template text with every `{{placeholder}}` span wrapped in the
+ * orange highlight style. Used by the read-only preview boxes and by the
+ * highlight layer underneath the editable textarea.
+ */
+export function renderHighlighted(text: string): React.ReactNode[] {
+  const nodes: React.ReactNode[] = []
+  let last = 0
+  for (const match of text.matchAll(PLACEHOLDER_PATTERN)) {
+    const index = match.index ?? 0
+    if (index > last) nodes.push(<span key={`t${last}`}>{text.slice(last, index)}</span>)
+    nodes.push(<span key={`p${index}`} className={css.placeholderHighlight}>{match[0]}</span>)
+    last = index + match[0].length
+  }
+  if (last < text.length) nodes.push(<span key={`t${last}`}>{text.slice(last)}</span>)
+  return nodes
+}
 
 export type SyncMode = 'append' | 'replace'
 
@@ -75,14 +93,16 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
 
         <div className={css.fieldSection}>
           <span className={css.label}>{t('preview.textHint')}</span>
-          <textarea
-            className={css.textarea}
-            style={{ minHeight: 300, resize: 'vertical' }}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            autoFocus
-            spellCheck={false}
-          />
+          <div className={css.highlightWrap}>
+            <pre className={css.highlightBack} aria-hidden="true">{renderHighlighted(text)}</pre>
+            <textarea
+              className={`${css.textarea} ${css.highlightFront}`}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              autoFocus
+              spellCheck={false}
+            />
+          </div>
         </div>
 
         <div className={css.fieldSection}>

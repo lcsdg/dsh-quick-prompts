@@ -429,8 +429,48 @@
   white-space: nowrap;
   font-size: 12px;
   line-height: 18px;
-  color: var(--dsw-alias-label-tertiary);
+  color: var(--qp-orange, #f59e0b);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* orange highlight for {{placeholder}} spans inside template text */
+.placeholderHighlight {
+  color: var(--qp-orange, #f59e0b);
+}
+
+/* ---- highlight overlay: colored template below, transparent-text
+   textarea above (same metrics so soft wrapping lines up) ---- */
+.highlightWrap {
+  position: relative;
+}
+
+.highlightBack {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 300px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--dsw-alias-fill-primary);
+  color: var(--dsw-alias-text-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  pointer-events: none;
+}
+
+.highlightFront {
+  position: absolute;
+  inset: 0;
+  min-height: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: var(--dsw-alias-text-primary, #0f1115);
+  resize: none;
 }
 
 /* placeholder fill inputs: explicit border so the row reads as an input */

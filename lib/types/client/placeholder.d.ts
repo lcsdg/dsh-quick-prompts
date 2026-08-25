@@ -9,6 +9,8 @@ export interface PlaceholderField {
     /** The placeholder name (trimmed, deduplicated). */
     name: string;
 }
+/** Global pattern so callers can also use String.matchAll for highlighting. */
+export declare const PLACEHOLDER_PATTERN: RegExp;
 /**
  * Extract the distinct placeholder names from a template, in first-appearance
  * order (duplicates collapse to one field).
