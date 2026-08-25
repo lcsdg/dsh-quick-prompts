@@ -469,7 +469,8 @@
   min-height: 0;
   background: transparent;
   color: transparent;
-  caret-color: var(--dsw-alias-text-primary, #0f1115);
+  /* orange caret: clearly visible on both light and dark themes */
+  caret-color: var(--qp-orange, #f59e0b);
   resize: none;
 }
 
