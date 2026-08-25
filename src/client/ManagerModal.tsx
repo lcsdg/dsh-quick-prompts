@@ -431,15 +431,17 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
 
             <div className={css.fieldSection}>
               <span className={css.label}>{t('manager.textField')}</span>
-              <textarea
-                className={css.textarea}
-                style={{ minHeight: 300, resize: 'vertical' }}
-                value={editor.text}
-                placeholder={t('manager.textField')}
-                onChange={(e) => setEditor((prev) => (prev === null ? prev : { ...prev, text: e.target.value }))}
-                spellCheck={false}
-                autoFocus
-              />
+              <div className={css.highlightWrap}>
+                <pre className={css.highlightBack} aria-hidden="true">{renderHighlighted(editor.text)}</pre>
+                <textarea
+                  className={`${css.textarea} ${css.highlightFront}`}
+                  value={editor.text}
+                  placeholder={t('manager.textField')}
+                  onChange={(e) => setEditor((prev) => (prev === null ? prev : { ...prev, text: e.target.value }))}
+                  spellCheck={false}
+                  autoFocus
+                />
+              </div>
             </div>
 
             <div className={`${css.actions} ${css.actionsDivider}`}>
