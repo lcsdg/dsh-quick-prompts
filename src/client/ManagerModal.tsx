@@ -90,6 +90,8 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const [saving, setSaving] = useState(false)
   /** Prompt open in the dedicated editor dialog (null = no dialog open). */
   const [editor, setEditor] = useState<{ id: string; label: string; text: string } | null>(null)
+  /** Delete confirmation: kind + target id + display label. */
+  const [confirm, setConfirm] = useState<{ kind: 'category' | 'prompt'; id: string; label: string } | null>(null)
 
   const { categories, prompts } = staged
 
@@ -169,11 +171,19 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const removeCategory = (id: string): void => {
     setStaged((prev) => ({
       categories: prev.categories.filter((c) => c.id !== id),
-      // Prompts of the removed feature become uncategorized.
-      prompts: prev.prompts.map((p) => (p.categoryId === id ? { ...p, categoryId: '' } : p)),
+      // Prompts of the removed feature are deleted together with it.
+      prompts: prev.prompts.filter((p) => p.categoryId !== id),
     }))
     if (selectedId === id) setSelectedId(null)
     setNotice(null)
+  }
+
+  /** Run the confirmed delete (category deletes its prompts too). */
+  const confirmDelete = (): void => {
+    if (confirm === null) return
+    if (confirm.kind === 'category') removeCategory(confirm.id)
+    else removePrompt(confirm.id)
+    setConfirm(null)
   }
 
   const doImport = (): void => {
@@ -287,7 +297,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                   {renamingId !== category.id ? (
                     <span className={css.railActions}>
                       <button type="button" className={css.iconButton} title={t('manager.rename')} onClick={() => startRename(category)}>{ICONS.rename}</button>
-                      <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.removeCategory')} onClick={() => removeCategory(category.id)}>{ICONS.trash}</button>
+                      <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.removeCategory')} onClick={() => setConfirm({ kind: 'category', id: category.id, label: category.name })}>{ICONS.trash}</button>
                     </span>
                   ) : null}
                 </div>
@@ -353,7 +363,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                         <span className={css.rowActions}>
                           <button type="button" className={css.iconButton} title={t('manager.moveUp')} onClick={() => movePrompt(item.id, -1)}>{ICONS.up}</button>
                           <button type="button" className={css.iconButton} title={t('manager.moveDown')} onClick={() => movePrompt(item.id, 1)}>{ICONS.down}</button>
-                          <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => removePrompt(item.id)}>{ICONS.trash}</button>
+                          <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => setConfirm({ kind: 'prompt', id: item.id, label: item.label })}>{ICONS.trash}</button>
                         </span>
                       </div>
                       <div className={css.previewWrap}>
@@ -456,6 +466,31 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
               >
                 {t('manager.save')}
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {/* ---- delete confirmation dialog ---- */}
+      {confirm !== null ? (
+        <div className={css.overlay} style={{ zIndex: 1200 }}>
+          <div className={`${css.card} ${css.confirmCard}`} role="alertdialog" aria-modal="true">
+            <p className={css.title}>{t('manager.confirmDeleteTitle')}</p>
+            {confirm.kind === 'category' ? (
+              <span className={css.hint}>
+                {t('manager.confirmDeleteCategory', {
+                  name: confirm.label,
+                  count: String(prompts.filter((p) => p.categoryId === confirm.id).length),
+                })}
+              </span>
+            ) : (
+              <span className={css.hint}>
+                {t('manager.confirmDeletePrompt', { name: confirm.label.trim() !== '' ? confirm.label : t('manager.unnamed') })}
+              </span>
+            )}
+            <div className={`${css.actions} ${css.actionsDivider}`}>
+              <span className={css.spacer} />
+              <button type="button" className={css.button} onClick={() => setConfirm(null)}>{t('manager.cancel')}</button>
+              <button type="button" className={css.dangerPrimary} onClick={confirmDelete}>{t('manager.delete')}</button>
             </div>
           </div>
         </div>

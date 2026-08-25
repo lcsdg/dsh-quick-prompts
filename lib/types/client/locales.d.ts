@@ -53,6 +53,11 @@ export declare const zh: {
     'manager.dirty': string;
     'manager.editPromptTitle': string;
     'manager.editPromptHint': string;
+    'manager.confirmDeleteTitle': string;
+    'manager.confirmDeleteCategory': string;
+    'manager.confirmDeletePrompt': string;
+    'manager.delete': string;
+    'manager.unnamed': string;
 };
 export declare const en: {
     'dock.title': string;
@@ -105,5 +110,10 @@ export declare const en: {
     'manager.dirty': string;
     'manager.editPromptTitle': string;
     'manager.editPromptHint': string;
+    'manager.confirmDeleteTitle': string;
+    'manager.confirmDeleteCategory': string;
+    'manager.confirmDeletePrompt': string;
+    'manager.delete': string;
+    'manager.unnamed': string;
 };
 export type QuickPromptsKey = keyof typeof zh;

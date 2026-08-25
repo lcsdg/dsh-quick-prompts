@@ -54,6 +54,11 @@ export const zh = {
   'manager.dirty': '有未保存的修改',
   'manager.editPromptTitle': '编辑指令',
   'manager.editPromptHint': '修改仅在点击保存后生效',
+  'manager.confirmDeleteTitle': '删除确认',
+  'manager.confirmDeleteCategory': '确定删除功能「{name}」？其下 {count} 条指令将一并删除',
+  'manager.confirmDeletePrompt': '确定删除指令「{name}」？',
+  'manager.delete': '删除',
+  'manager.unnamed': '未命名',
 }
 
 export const en = {
@@ -107,6 +112,11 @@ export const en = {
   'manager.dirty': 'You have unsaved changes',
   'manager.editPromptTitle': 'Edit prompt',
   'manager.editPromptHint': 'Changes apply when you save',
+  'manager.confirmDeleteTitle': 'Confirm delete',
+  'manager.confirmDeleteCategory': 'Delete feature "{name}"? Its {count} prompts will be deleted too',
+  'manager.confirmDeletePrompt': 'Delete prompt "{name}"?',
+  'manager.delete': 'Delete',
+  'manager.unnamed': 'Unnamed',
 }
 
 export type QuickPromptsKey = keyof typeof zh

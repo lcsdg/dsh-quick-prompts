@@ -556,6 +556,35 @@
   width: min(640px, calc(100vw - 48px));
 }
 
+/* delete confirmation dialog */
+.confirmCard {
+  width: min(400px, calc(100vw - 48px));
+}
+
+.dangerPrimary {
+  appearance: none;
+  border: none;
+  background: var(--dsw-alias-text-danger, #d33);
+  color: #fff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  padding: 0 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: filter 120ms ease;
+}
+
+.dangerPrimary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.dangerPrimary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .managerSplit {
   display: flex;
   flex-direction: row;
