@@ -258,6 +258,23 @@
   overflow-y: auto;
 }
 
+/* one bordered card per functional area inside the modals */
+.fieldSection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+  background: var(--dsw-alias-fill-secondary, transparent);
+}
+
+/* divider above the action button row */
+.actionsDivider {
+  border-top: 1px solid var(--dsw-alias-border-l1);
+  padding-top: 12px;
+}
+
 @keyframes quickPromptsPop {
   from { opacity: 0; transform: translateY(6px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }

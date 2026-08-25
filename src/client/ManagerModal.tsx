@@ -418,7 +418,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
           <div className={`${css.card} ${css.editorCard}`} role="dialog" aria-modal="true">
             <p className={css.title}>{t('manager.editPromptTitle')}</p>
 
-            <div>
+            <div className={css.fieldSection}>
               <span className={css.label}>{t('manager.labelField')}</span>
               <input
                 className={css.smallInput}
@@ -428,7 +428,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
               />
             </div>
 
-            <div>
+            <div className={css.fieldSection}>
               <span className={css.label}>{t('manager.textField')}</span>
               <textarea
                 className={css.textarea}
@@ -441,7 +441,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
               />
             </div>
 
-            <div className={css.actions}>
+            <div className={`${css.actions} ${css.actionsDivider}`}>
               <span className={css.hint}>{t('manager.editPromptHint')}</span>
               <span className={css.spacer} />
               <button type="button" className={css.button} onClick={() => setEditor(null)}>{t('manager.cancel')}</button>
