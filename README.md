@@ -16,11 +16,11 @@ A row of user-defined prompt chips above the composer. Click a chip to preview/e
 ## 安装 / Install
 
 ```bash
-git clone --depth 1 --branch dev https://github.com/zhu1090093659/dsh-web.git
-cd dsh-web
+git clone https://github.com/lcsdg/dsh-quick-prompts.git
+cd dsh-quick-prompts
 pnpm install
-pnpm --filter dsh-quick-prompts build
-dsh plugin --profile web add link:$(pwd)/packages/dsh-quick-prompts
+pnpm build
+dsh plugin --profile web add link:$(pwd)
 ```
 
 安装后**刷新 Web GUI 页面**即可看到输入区上方的指令行（无需重启 dsh）。
@@ -42,8 +42,8 @@ dsh plugin --profile web add link:$(pwd)/packages/dsh-quick-prompts
 ## 开发 / Development
 
 ```bash
-pnpm --filter dsh-quick-prompts watch   # 增量构建 lib/client.js
-pnpm --filter dsh-quick-prompts typecheck
+pnpm watch          # 增量构建 lib/client.js
+pnpm typecheck
 ```
 
 结构：
