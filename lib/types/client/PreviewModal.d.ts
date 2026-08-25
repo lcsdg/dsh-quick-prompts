@@ -10,8 +10,8 @@ export interface PreviewResult {
     mode: SyncMode;
 }
 export interface PreviewModalProps extends PropsLocale<'quick-prompts'> {
-    /** The entry being previewed (label + template). */
-    item: PromptItem;
+    /** The entry being previewed (label + template; feature linkage unused here). */
+    item: Pick<PromptItem, 'id' | 'label' | 'text'>;
     /** When true, the modal was opened from the direct-send affordance. */
     fromSend?: boolean;
     /** Close without doing anything. */

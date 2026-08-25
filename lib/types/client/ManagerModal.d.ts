@@ -11,9 +11,9 @@ export interface ManagerModalProps extends PropsLocale<'quick-prompts'> {
     onClose: () => void;
 }
 /**
- * The manager modal. `items` is a local staging copy; Save commits the whole
- * list through `scope.set('prompts', items)` (the official settings write
- * path, revision-fenced), Cancel discards it.
+ * The manager modal. `categories` and `prompts` are local staging copies;
+ * Save commits both through `scope.set` (official settings write path,
+ * revision-fenced), Cancel discards them.
  */
 export declare function ManagerModal(props: ManagerModalProps): React.JSX.Element;
 /** Re-export so the dock can label the key type uniformly. */

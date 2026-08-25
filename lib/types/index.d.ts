@@ -16,7 +16,14 @@ export declare const name = "quick-prompts";
  * depending on a Host package.
  */
 export declare const QUICK_PROMPTS_SETTINGS_NAMESPACE: import("@deepseek-ai/dsh-settings").SettingsNamespace;
-/** One prompt entry: unique id, chip label, prompt template and feature group. */
+/** A feature group: a stable id plus a user-renamable display name. */
+export interface PromptCategory {
+    /** Stable unique id; prompts reference it via categoryId. */
+    id: string;
+    /** Display name (editable in the manager). */
+    name: string;
+}
+/** One prompt entry: unique id, chip label and the prompt template text. */
 export interface PromptItem {
     /** Stable unique id (kept when the user edits label/text). */
     id: string;
@@ -24,25 +31,27 @@ export interface PromptItem {
     label: string;
     /** Prompt template; `{{name}}` spans become fill-in fields in the preview. */
     text: string;
-    /**
-     * Feature/category this prompt belongs to — a free-form string that groups
-     * prompts in the dock (feature tabs) and in the manager (grouped rows).
-     * Empty string = uncategorized (shown under "All").
-     */
-    category?: string;
+    /** Id of the feature this prompt belongs to; '' = uncategorized. */
+    categoryId: string;
 }
-/** The quick-prompts settings section: an ordered prompt list. */
+/** The quick-prompts settings section: features plus the prompt list. */
 export interface QuickPromptsSettings {
+    /** Ordered feature list (dock tabs / manager left rail). */
+    categories: PromptCategory[];
+    /** Ordered prompt list (each prompt belongs to a categoryId). */
     prompts: PromptItem[];
 }
 /** Schema for the settings section (validated against the stored document). */
 export declare const Config: z<QuickPromptsSettings>;
+/** Starter features shipped as the composition base layer (user-overridable). */
+export declare const DEFAULT_CATEGORIES: PromptCategory[];
 /** Starter prompts shipped as the composition base layer (user-overridable). */
 export declare const DEFAULT_PROMPTS: PromptItem[];
 /**
  * Apply the host half: register the settings section. The section's
- * composition base carries the starter prompts; the web settings surface
- * (schema-driven) and the quick-prompts dock both edit the same namespace.
+ * composition base carries the starter features and prompts; the web
+ * settings surface (schema-driven) and the quick-prompts dock both edit the
+ * same namespace.
  * @param ctx - host plugin context.
  */
 export declare function apply(ctx: Context): void;

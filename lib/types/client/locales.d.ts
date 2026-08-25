@@ -23,6 +23,13 @@ export declare const zh: {
     'preview.send': string;
     'preview.sendFailed': string;
     'manager.title': string;
+    'manager.railTitle': string;
+    'manager.addPrompt': string;
+    'manager.addCategory': string;
+    'manager.rename': string;
+    'manager.removeCategory': string;
+    'manager.categoryPlaceholder': string;
+    'manager.selectFeature': string;
     'manager.add': string;
     'manager.save': string;
     'manager.cancel': string;
@@ -31,9 +38,6 @@ export declare const zh: {
     'manager.remove': string;
     'manager.labelField': string;
     'manager.textField': string;
-    'manager.categoryField': string;
-    'manager.categoryPlaceholder': string;
-    'manager.addCategory': string;
     'manager.groupEmpty': string;
     'manager.empty': string;
     'manager.import': string;
@@ -66,6 +70,13 @@ export declare const en: {
     'preview.send': string;
     'preview.sendFailed': string;
     'manager.title': string;
+    'manager.railTitle': string;
+    'manager.addPrompt': string;
+    'manager.addCategory': string;
+    'manager.rename': string;
+    'manager.removeCategory': string;
+    'manager.categoryPlaceholder': string;
+    'manager.selectFeature': string;
     'manager.add': string;
     'manager.save': string;
     'manager.cancel': string;
@@ -74,9 +85,6 @@ export declare const en: {
     'manager.remove': string;
     'manager.labelField': string;
     'manager.textField': string;
-    'manager.categoryField': string;
-    'manager.categoryPlaceholder': string;
-    'manager.addCategory': string;
     'manager.groupEmpty': string;
     'manager.empty': string;
     'manager.import': string;

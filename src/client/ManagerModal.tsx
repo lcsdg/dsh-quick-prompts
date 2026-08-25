@@ -1,13 +1,16 @@
 /**
- * Manager modal: full CRUD over the prompt list, grouped by feature —
- * add, edit, remove, reorder, assign features, import (paste JSON) and
- * export (download JSON). Edits stage in local state and are committed to
- * the settings namespace only on Save.
+ * Manager modal: two-pane layout. The LEFT rail lists the features
+ * (add / rename / delete), the RIGHT pane shows the prompts of the selected
+ * feature (add / edit / remove / reorder / import / export). New prompts are
+ * created inside the selected feature automatically — no category input on
+ * the rows. Edits stage in local state and are committed to the settings
+ * namespace only on Save.
  */
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
-import type { PromptItem, QuickPromptsSettings } from '../types.ts'
+import type { PromptCategory, PromptItem, QuickPromptsSettings } from '../types.ts'
+import { normalizeSettings } from '../types.ts'
 import type { QuickPromptsKey } from './locales.ts'
 import css from './quick-prompts.module.css'
 
@@ -28,17 +31,21 @@ interface ImportedPrompt {
 }
 
 /** Validate one imported entry and normalize it, or return null. */
-function normalizeImported(raw: ImportedPrompt): PromptItem | null {
+function normalizeImported(raw: ImportedPrompt): { label: string; text: string; category?: string } | null {
   if (typeof raw !== 'object' || raw === null) return null
   const label = typeof raw.label === 'string' ? raw.label.trim() : ''
   const text = typeof raw.text === 'string' ? raw.text : ''
   if (label === '' && text === '') return null
   const category = typeof raw.category === 'string' ? raw.category.trim() : ''
-  return { id: crypto.randomUUID(), label: label || text.slice(0, 16), text, ...(category !== '' ? { category } : {}) }
+  return { label: label || text.slice(0, 16), text, ...(category !== '' ? { category } : {}) }
 }
 
-function newPrompt(): PromptItem {
-  return { id: crypto.randomUUID(), label: '', text: '' }
+function newPrompt(categoryId: string): PromptItem {
+  return { id: crypto.randomUUID(), label: '', text: '', categoryId }
+}
+
+function newCategory(name: string): PromptCategory {
+  return { id: crypto.randomUUID(), name }
 }
 
 /** Small inline SVG icons (no icon dependency). */
@@ -46,89 +53,110 @@ const ICONS = {
   up: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4-4 4 4" /></svg>,
   down: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4" /></svg>,
   trash: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4 4.5l.6 8a1.5 1.5 0 001.5 1.4h3.8a1.5 1.5 0 001.5-1.4l.6-8M6.7 7.2v4.1M9.3 7.2v4.1" /></svg>,
-}
-
-/** One rendering group: a feature (or the uncategorized bucket) + its rows. */
-interface Group {
-  /** Category key; '' = uncategorized. */
-  key: string
-  /** Display name (locale label for the uncategorized bucket). */
-  name: string
-  items: PromptItem[]
+  rename: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M11.3 2.7l2 2L5.5 12.5l-2.8.8.8-2.8 7.8-7.8z" /></svg>,
+  add: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M8 3v10M3 8h10" /></svg>,
 }
 
 /**
- * Group the staged items by feature, in first-appearance order, with the
- * uncategorized bucket last.
- */
-function groupByFeature(items: readonly PromptItem[], uncategorizedLabel: string): Group[] {
-  const groups: Group[] = []
-  const byKey = new Map<string, Group>()
-  let uncategorized: Group | null = null
-  for (const item of items) {
-    const key = (item.category ?? '').trim()
-    if (key === '') {
-      if (uncategorized === null) {
-        uncategorized = { key: '', name: uncategorizedLabel, items: [] }
-        byKey.set('', uncategorized)
-      }
-      uncategorized.items.push(item)
-      continue
-    }
-    let group = byKey.get(key)
-    if (group === undefined) {
-      group = { key, name: key, items: [] }
-      byKey.set(key, group)
-      groups.push(group)
-    }
-    group.items.push(item)
-  }
-  if (uncategorized !== null) groups.push(uncategorized)
-  return groups
-}
-
-/**
- * The manager modal. `items` is a local staging copy; Save commits the whole
- * list through `scope.set('prompts', items)` (the official settings write
- * path, revision-fenced), Cancel discards it.
+ * The manager modal. `categories` and `prompts` are local staging copies;
+ * Save commits both through `scope.set` (official settings write path,
+ * revision-fenced), Cancel discards them.
  */
 export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const { scope, snapshot, onClose, t } = props
-  const [items, setItems] = useState<PromptItem[]>(() => {
-    const stored = snapshot.status === 'ready' ? snapshot.value?.prompts : undefined
-    return stored !== undefined && stored.length > 0 ? stored.map((p) => ({ ...p })) : []
+  const [staged, setStaged] = useState(() => {
+    const stored = snapshot.status === 'ready' ? normalizeSettings(snapshot.value) : undefined
+    return {
+      categories: (stored?.categories ?? []).map((c) => ({ ...c })),
+      prompts: (stored?.prompts ?? []).map((p) => ({ ...p })),
+    }
   })
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const stored = snapshot.status === 'ready' ? normalizeSettings(snapshot.value) : undefined
+    const categories = stored?.categories ?? []
+    return categories.length > 0 ? categories[0].id : null
+  })
+  /** Category id being renamed inline ('' input value lives in renameDraft). */
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
+  /** Category id being added inline ('' = no add input open). */
+  const [addingCategory, setAddingCategory] = useState(false)
+  const [categoryDraft, setCategoryDraft] = useState('')
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const patch = (id: string, field: 'label' | 'text' | 'category', value: string): void => {
-    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)))
+  const { categories, prompts } = staged
+
+  const selected = categories.find((c) => c.id === selectedId) ?? null
+  const selectedPrompts = prompts.filter((p) => p.categoryId === selectedId)
+  const uncategorizedCount = prompts.filter((p) => p.categoryId === '').length
+
+  const patchPrompt = (id: string, field: 'label' | 'text', value: string): void => {
+    setStaged((prev) => ({ ...prev, prompts: prev.prompts.map((p) => (p.id === id ? { ...p, [field]: value } : p)) }))
     setNotice(null)
   }
 
-  const move = (index: number, delta: -1 | 1): void => {
-    setItems((prev) => {
-      const next = [...prev]
+  const movePrompt = (id: string, delta: -1 | 1): void => {
+    setStaged((prev) => {
+      const next = [...prev.prompts]
+      const index = next.findIndex((p) => p.id === id)
       const target = index + delta
-      if (target < 0 || target >= next.length) return prev
+      if (index < 0 || target < 0 || target >= next.length) return prev
+      // Only swap with a prompt inside the same feature.
+      if (next[target].categoryId !== next[index].categoryId) return prev
       ;[next[index], next[target]] = [next[target], next[index]]
-      return next
+      return { ...prev, prompts: next }
     })
     setNotice(null)
   }
 
-  const remove = (id: string): void => {
-    setItems((prev) => prev.filter((p) => p.id !== id))
+  const removePrompt = (id: string): void => {
+    setStaged((prev) => ({ ...prev, prompts: prev.prompts.filter((p) => p.id !== id) }))
     setNotice(null)
   }
 
-  const add = (category: string): void => {
-    const item = newPrompt()
-    const clean = category.trim()
-    if (clean !== '') item.category = clean
-    setItems((prev) => [...prev, item])
+  const addPrompt = (categoryId: string): void => {
+    setStaged((prev) => ({ ...prev, prompts: [...prev.prompts, newPrompt(categoryId)] }))
+    setNotice(null)
+  }
+
+  const addCategory = (): void => {
+    const name = categoryDraft.trim()
+    if (name === '') return
+    const category = newCategory(name)
+    setStaged((prev) => ({ ...prev, categories: [...prev.categories, category] }))
+    setSelectedId(category.id)
+    setCategoryDraft('')
+    setAddingCategory(false)
+    setNotice(null)
+  }
+
+  const startRename = (category: PromptCategory): void => {
+    setRenamingId(category.id)
+    setRenameDraft(category.name)
+  }
+
+  const commitRename = (): void => {
+    const id = renamingId
+    const name = renameDraft.trim()
+    setRenamingId(null)
+    if (id === null || name === '') return
+    setStaged((prev) => ({
+      ...prev,
+      categories: prev.categories.map((c) => (c.id === id ? { ...c, name } : c)),
+    }))
+    setNotice(null)
+  }
+
+  const removeCategory = (id: string): void => {
+    setStaged((prev) => ({
+      categories: prev.categories.filter((c) => c.id !== id),
+      // Prompts of the removed feature become uncategorized.
+      prompts: prev.prompts.map((p) => (p.categoryId === id ? { ...p, categoryId: '' } : p)),
+    }))
+    if (selectedId === id) setSelectedId(null)
     setNotice(null)
   }
 
@@ -136,11 +164,27 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
     try {
       const parsed: unknown = JSON.parse(importText)
       if (!Array.isArray(parsed)) throw new Error('expected an array')
-      const normalized = parsed
-        .map((raw) => normalizeImported(raw as ImportedPrompt))
-        .filter((p): p is PromptItem => p !== null)
+      const normalized = parsed.map((raw) => normalizeImported(raw as ImportedPrompt)).filter((p): p is { label: string; text: string; category?: string } => p !== null)
       if (normalized.length === 0) throw new Error('no valid entries')
-      setItems((prev) => [...prev, ...normalized])
+      setStaged((prev) => {
+        const cats = [...prev.categories]
+        const byName = new Map(cats.map((c) => [c.name, c]))
+        const prompts = [...prev.prompts]
+        for (const entry of normalized) {
+          let categoryId = selectedId ?? ''
+          if (entry.category !== undefined && entry.category !== '') {
+            let category = byName.get(entry.category)
+            if (category === undefined) {
+              category = newCategory(entry.category)
+              byName.set(entry.category, category)
+              cats.push(category)
+            }
+            categoryId = category.id
+          }
+          prompts.push({ id: crypto.randomUUID(), label: entry.label, text: entry.text, categoryId })
+        }
+        return { categories: cats, prompts }
+      })
       setImportText('')
       setImportOpen(false)
       setNotice({ kind: 'ok', text: t('manager.importDone', { count: String(normalized.length) }) })
@@ -150,7 +194,12 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   }
 
   const doExport = (): void => {
-    const payload = items.map(({ label, text, category }) => ({ label, text, ...(category !== undefined && category.trim() !== '' ? { category: category.trim() } : {}) }))
+    const nameOf = new Map(categories.map((c) => [c.id, c.name]))
+    const payload = prompts.map(({ label, text, categoryId }) => ({
+      label,
+      text,
+      ...(categoryId !== '' && nameOf.has(categoryId) ? { category: nameOf.get(categoryId) } : {}),
+    }))
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
@@ -164,119 +213,165 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
     if (saving) return
     setSaving(true)
     try {
-      const clean = items
+      const cleanCategories = categories.filter((c) => c.name.trim() !== '')
+      const cleanPrompts = prompts
         .filter((p) => p.label.trim() !== '' || p.text.trim() !== '')
-        .map((p) => {
-          const category = (p.category ?? '').trim()
-          return { ...p, label: p.label.trim(), ...(category !== '' ? { category } : { category: undefined }) }
-        })
-      await scope.set('prompts', clean)
+        .map((p) => ({ ...p, label: p.label.trim(), categoryId: cleanCategories.some((c) => c.id === p.categoryId) ? p.categoryId : '' }))
+      await scope.set('categories', cleanCategories)
+      await scope.set('prompts', cleanPrompts)
       onClose()
     } catch {
       setSaving(false)
     }
   }
 
-  const dirty = JSON.stringify(items) !== JSON.stringify(snapshot.status === 'ready' ? (snapshot.value?.prompts ?? []) : [])
-  const groups = groupByFeature(items, t('dock.uncategorized'))
-  // Datalist options: distinct feature names across the staged items.
-  const knownCategories = [...new Set(items.map((p) => (p.category ?? '').trim()).filter(Boolean))]
+  const stored = snapshot.status === 'ready' ? normalizeSettings(snapshot.value) : { categories: [], prompts: [] }
+  const dirty = JSON.stringify(staged) !== JSON.stringify({ categories: stored.categories, prompts: stored.prompts })
 
   return (
     <div className={css.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={css.card} role="dialog" aria-modal="true" style={{ width: 'min(660px, calc(100vw - 48px))' }}>
+      <div className={`${css.card} ${css.managerCard}`} role="dialog" aria-modal="true">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <p className={css.title}>{t('manager.title')}</p>
           {dirty ? <span className={css.hint}>{t('manager.dirty')}</span> : null}
         </div>
 
-        <div className={css.managerBody}>
-          {groups.length === 0 ? (
-            <span className={css.hint} style={{ padding: '12px 0', textAlign: 'center' }}>{t('manager.empty')}</span>
-          ) : (
-            <div className={css.list}>
-              {groups.map((group) => (
-                <div key={group.key === '' ? '__uncat__' : group.key} className={css.group}>
-                  <div className={css.groupHeader}>
-                    <span className={css.groupName}>{group.name}</span>
-                    <span className={css.groupCount}>{String(group.items.length)}</span>
-                    <span className={css.dockSpacer} />
-                    <button type="button" className={css.button} style={{ lineHeight: '20px', padding: '0 8px' }} onClick={() => add(group.key)}>
-                      {t('manager.add')}
+        <div className={css.managerSplit}>
+          {/* ---- left rail: features ---- */}
+          <div className={css.rail}>
+            <div className={css.railHeader}>
+              <span className={css.railTitle}>{t('manager.railTitle')}</span>
+            </div>
+            <div className={css.railList}>
+              {categories.map((category) => (
+                <div key={category.id} className={`${css.railRow}${selectedId === category.id ? ` ${css.railRowActive}` : ''}`}>
+                  {renamingId === category.id ? (
+                    <input
+                      className={css.railInput}
+                      value={renameDraft}
+                      autoFocus
+                      onChange={(e) => setRenameDraft(e.target.value)}
+                      onBlur={commitRename}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitRename()
+                        if (e.key === 'Escape') setRenamingId(null)
+                      }}
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      className={css.railButton}
+                      onClick={() => setSelectedId(category.id)}
+                    >
+                      <span className={css.railName}>{category.name}</span>
+                      <span className={css.railCount}>{String(prompts.filter((p) => p.categoryId === category.id).length)}</span>
                     </button>
-                  </div>
-                  {group.items.map((item, index) => {
-                    const globalIndex = items.indexOf(item)
-                    return (
-                      <div key={item.id} className={css.row}>
-                        <div className={css.rowHeader}>
-                          <span className={css.rowIndex}>{String(globalIndex + 1)}</span>
-                          <input
-                            className={css.smallInput}
-                            style={{ flex: 'none', width: 150 }}
-                            value={item.label}
-                            placeholder={t('manager.labelField')}
-                            onChange={(e) => patch(item.id, 'label', e.target.value)}
-                          />
-                          <input
-                            className={css.smallInput}
-                            style={{ flex: 'none', width: 130 }}
-                            value={item.category ?? ''}
-                            list="quick-prompts-categories"
-                            placeholder={t('manager.categoryField')}
-                            onChange={(e) => patch(item.id, 'category', e.target.value)}
-                          />
-                          <span className={css.rowActions}>
-                            <button type="button" className={css.iconButton} title={t('manager.moveUp')} disabled={globalIndex === 0} onClick={() => move(globalIndex, -1)}>{ICONS.up}</button>
-                            <button type="button" className={css.iconButton} title={t('manager.moveDown')} disabled={globalIndex === items.length - 1} onClick={() => move(globalIndex, 1)}>{ICONS.down}</button>
-                            <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => remove(item.id)}>{ICONS.trash}</button>
-                          </span>
-                        </div>
-                        <textarea
-                          className={css.textarea}
-                          style={{ minHeight: 56 }}
-                          value={item.text}
-                          placeholder={t('manager.textField')}
-                          onChange={(e) => patch(item.id, 'text', e.target.value)}
-                          spellCheck={false}
-                        />
-                      </div>
-                    )
-                  })}
-                  {group.items.length === 0 ? (
-                    <span className={css.hint} style={{ padding: '4px 0 8px' }}>{t('manager.groupEmpty')}</span>
+                  )}
+                  {renamingId !== category.id ? (
+                    <span className={css.railActions}>
+                      <button type="button" className={css.iconButton} title={t('manager.rename')} onClick={() => startRename(category)}>{ICONS.rename}</button>
+                      <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.removeCategory')} onClick={() => removeCategory(category.id)}>{ICONS.trash}</button>
+                    </span>
                   ) : null}
                 </div>
               ))}
+              {uncategorizedCount > 0 ? (
+                <div className={`${css.railRow}${selectedId === '' ? ` ${css.railRowActive}` : ''}`}>
+                  <button type="button" className={css.railButton} onClick={() => setSelectedId('')}>
+                    <span className={css.railName}>{t('dock.uncategorized')}</span>
+                    <span className={css.railCount}>{String(uncategorizedCount)}</span>
+                  </button>
+                </div>
+              ) : null}
+              {addingCategory ? (
+                <div className={css.railRow}>
+                  <input
+                    className={css.railInput}
+                    value={categoryDraft}
+                    autoFocus
+                    placeholder={t('manager.categoryPlaceholder')}
+                    onChange={(e) => setCategoryDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') addCategory()
+                      if (e.key === 'Escape') { setAddingCategory(false); setCategoryDraft('') }
+                    }}
+                  />
+                </div>
+              ) : (
+                <button type="button" className={css.railAdd} onClick={() => setAddingCategory(true)}>
+                  {ICONS.add}
+                  {t('manager.addCategory')}
+                </button>
+              )}
             </div>
-          )}
-
-          <datalist id="quick-prompts-categories">
-            {knownCategories.map((category) => <option key={category} value={category} />)}
-          </datalist>
-
-          <div className={css.addRow}>
-            <button type="button" className={css.button} onClick={() => add('')}>{t('manager.add')}</button>
           </div>
 
-          {importOpen ? (
-            <div className={css.importZone}>
-              <input
-                className={css.importTextarea}
-                value={importText}
-                placeholder={t('manager.importPlaceholder')}
-                onChange={(e) => setImportText(e.target.value)}
-                spellCheck={false}
-              />
-              <button type="button" className={css.primary} disabled={importText.trim() === ''} onClick={doImport}>{t('manager.import')}</button>
-              <button type="button" className={css.button} onClick={() => { setImportOpen(false); setImportText('') }}>{t('preview.cancel')}</button>
+          {/* ---- right pane: prompts of the selected feature ---- */}
+          <div className={css.pane}>
+            <div className={css.paneHeader}>
+              <span className={css.paneTitle}>{selected !== null ? selected.name : (selectedId === '' ? t('dock.uncategorized') : '')}</span>
+              <span className={css.dockSpacer} />
+              <button type="button" className={css.button} style={{ lineHeight: '20px', padding: '0 8px' }} onClick={() => { if (selectedId !== null) addPrompt(selectedId) }} disabled={selectedId === null}>
+                {ICONS.add}
+                {t('manager.addPrompt')}
+              </button>
             </div>
-          ) : null}
-
-          {notice !== null ? (
-            <span className={css.hint} style={notice.kind === 'error' ? { color: 'var(--dsw-alias-text-danger, #d33)' } : undefined}>{notice.text}</span>
-          ) : null}
+            <div className={css.paneBody}>
+              {selectedPrompts.length === 0 ? (
+                <span className={css.hint} style={{ padding: '16px 0', textAlign: 'center' }}>
+                  {selectedId === null ? t('manager.selectFeature') : t('manager.groupEmpty')}
+                </span>
+              ) : (
+                <div className={css.list}>
+                  {selectedPrompts.map((item) => (
+                    <div key={item.id} className={css.row}>
+                      <div className={css.rowHeader}>
+                        <input
+                          className={css.smallInput}
+                          style={{ flex: 'none', width: 150 }}
+                          value={item.label}
+                          placeholder={t('manager.labelField')}
+                          onChange={(e) => patchPrompt(item.id, 'label', e.target.value)}
+                        />
+                        <span className={css.rowActions}>
+                          <button type="button" className={css.iconButton} title={t('manager.moveUp')} onClick={() => movePrompt(item.id, -1)}>{ICONS.up}</button>
+                          <button type="button" className={css.iconButton} title={t('manager.moveDown')} onClick={() => movePrompt(item.id, 1)}>{ICONS.down}</button>
+                          <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => removePrompt(item.id)}>{ICONS.trash}</button>
+                        </span>
+                      </div>
+                      <textarea
+                        className={css.textarea}
+                        style={{ minHeight: 56 }}
+                        value={item.text}
+                        placeholder={t('manager.textField')}
+                        onChange={(e) => patchPrompt(item.id, 'text', e.target.value)}
+                        spellCheck={false}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+
+        {importOpen ? (
+          <div className={css.importZone}>
+            <input
+              className={css.importTextarea}
+              value={importText}
+              placeholder={t('manager.importPlaceholder')}
+              onChange={(e) => setImportText(e.target.value)}
+              spellCheck={false}
+            />
+            <button type="button" className={css.primary} disabled={importText.trim() === ''} onClick={doImport}>{t('manager.import')}</button>
+            <button type="button" className={css.button} onClick={() => { setImportOpen(false); setImportText('') }}>{t('preview.cancel')}</button>
+          </div>
+        ) : null}
+
+        {notice !== null ? (
+          <span className={css.hint} style={notice.kind === 'error' ? { color: 'var(--dsw-alias-text-danger, #d33)' } : undefined}>{notice.text}</span>
+        ) : null}
 
         <div className={css.actions}>
           <span className={css.hint}>{t('manager.exportHint')}</span>
@@ -284,7 +379,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
           {!importOpen ? (
             <button type="button" className={css.button} onClick={() => setImportOpen(true)}>{t('manager.import')}</button>
           ) : null}
-          <button type="button" className={css.button} onClick={doExport} disabled={items.length === 0}>{t('manager.export')}</button>
+          <button type="button" className={css.button} onClick={doExport} disabled={prompts.length === 0}>{t('manager.export')}</button>
           <button type="button" className={css.button} onClick={onClose} disabled={saving}>{t('manager.cancel')}</button>
           <button type="button" className={css.primary} disabled={saving} onClick={() => void save()}>
             {saving ? '…' : t('manager.save')}

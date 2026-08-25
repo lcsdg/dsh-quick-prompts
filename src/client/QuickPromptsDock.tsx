@@ -13,7 +13,8 @@ import { memo, useEffect, useState } from 'react'
 import type { ConversationSnapshot, SessionId } from '@deepseek-ai/dsh-client-runtime/client'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
-import type { PromptItem, QuickPromptsSettings } from '../types.ts'
+import type { QuickPromptsSettings } from '../types.ts'
+import { normalizeSettings } from '../types.ts'
 import { hasPlaceholders } from './placeholder.ts'
 import { PreviewModal, type PreviewResult } from './PreviewModal.tsx'
 import { ManagerModal } from './ManagerModal.tsx'
@@ -22,7 +23,7 @@ import css from './quick-prompts.module.css'
 
 /** What the dock hands to the preview modal. */
 interface PreviewState {
-  item: PromptItem
+  item: { id: string; label: string; text: string }
   /** Opened from the direct-send affordance (hides the append/replace toggle). */
   fromSend: boolean
 }
@@ -65,25 +66,11 @@ const GEAR_ICON = (
 )
 
 /**
- * Distinct feature names across the prompt list, in first-appearance order.
- * Uncategorized prompts (empty/absent category) are exposed as the
- * "uncategorized" pseudo-feature so they stay reachable in the dock.
+ * Feature tabs for the dock: every registered feature plus the
+ * "uncategorized" pseudo-feature when any prompt is uncategorized.
  */
-function featureTabs(prompts: readonly PromptItem[]): { key: string; name: string }[] {
-  const tabs: { key: string; name: string }[] = []
-  const seen = new Set<string>()
-  let hasUncategorized = false
-  for (const prompt of prompts) {
-    const category = (prompt.category ?? '').trim()
-    if (category === '') {
-      hasUncategorized = true
-      continue
-    }
-    if (!seen.has(category)) {
-      seen.add(category)
-      tabs.push({ key: category, name: category })
-    }
-  }
+function featureTabs(categories: readonly { id: string; name: string }[], hasUncategorized: boolean): { key: string; name: string }[] {
+  const tabs = categories.map((category) => ({ key: category.id, name: category.name }))
   if (hasUncategorized) tabs.push({ key: '', name: '' })
   return tabs
 }
@@ -96,31 +83,31 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
   const [managerOpen, setManagerOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
-  /** Selected feature key; null = All. '' = uncategorized. */
+  /** Selected feature id; null = All. '' = uncategorized. */
   const [feature, setFeature] = useState<string | null>(null)
 
   useEffect(() => scope.subscribe(() => setSnapshot(scope.getSnapshot())), [scope])
-
-  const prompts = snapshot.status === 'ready' ? (snapshot.value?.prompts ?? []) : []
 
   // While the namespace is still loading (or unavailable), keep the dock out
   // of the way instead of flashing an empty row.
   if (snapshot.status !== 'ready') return null
 
-  const tabs = featureTabs(prompts)
-  const visible = feature === null ? prompts : prompts.filter((p) => (p.category ?? '').trim() === feature)
+  const { categories, prompts } = normalizeSettings(snapshot.value)
+  const hasUncategorized = prompts.some((p) => p.categoryId === '')
+  const tabs = featureTabs(categories, hasUncategorized)
+  const visible = feature === null ? prompts : prompts.filter((p) => p.categoryId === feature)
 
   // Drop a stale selection when the feature disappeared (e.g. after a save).
   useEffect(() => {
     if (feature !== null && !tabs.some((tab) => tab.key === feature)) setFeature(null)
   }, [feature, tabs])
 
-  const openPreview = (item: PromptItem, fromSend: boolean): void => {
+  const openPreview = (item: { id: string; label: string; text: string }, fromSend: boolean): void => {
     setSendError(null)
     setPreview({ item, fromSend })
   }
 
-  const handleSend = async (item: PromptItem): Promise<void> => {
+  const handleSend = async (item: { id: string; label: string; text: string }): Promise<void> => {
     // Templates with placeholders must be filled first — route to the modal.
     if (hasPlaceholders(item.text)) {
       openPreview(item, true)
