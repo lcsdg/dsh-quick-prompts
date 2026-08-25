@@ -796,6 +796,14 @@
   display: block;
 }
 
+/* text arrows (↑↓) for the move-up/move-down buttons */
+.arrowIcon {
+  display: block;
+  font-size: 14px;
+  line-height: 16px;
+  font-weight: 600;
+}
+
 .managerBody {
   display: flex;
   flex-direction: column;

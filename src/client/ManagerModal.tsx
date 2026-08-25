@@ -48,10 +48,10 @@ function newCategory(name: string): PromptCategory {
   return { id: crypto.randomUUID(), name }
 }
 
-/** Small inline SVG icons (no icon dependency). */
+/** Small inline icons (no icon dependency): ↑↓ as text arrows, rest SVG. */
 const ICONS = {
-  up: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4-4 4 4" /></svg>,
-  down: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4" /></svg>,
+  up: <span className={css.arrowIcon} aria-hidden="true">↑</span>,
+  down: <span className={css.arrowIcon} aria-hidden="true">↓</span>,
   trash: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4 4.5l.6 8a1.5 1.5 0 001.5 1.4h3.8a1.5 1.5 0 001.5-1.4l.6-8M6.7 7.2v4.1M9.3 7.2v4.1" /></svg>,
   rename: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M11.3 2.7l2 2L5.5 12.5l-2.8.8.8-2.8 7.8-7.8z" /></svg>,
   add: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M8 3v10M3 8h10" /></svg>,
