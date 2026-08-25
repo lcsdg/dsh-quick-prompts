@@ -20,7 +20,7 @@ A row of user-defined prompt chips above the composer. Click a chip to preview/e
 
 ```bash
 # 方式一：npm（推荐，一条命令）
-dsh plugin --profile web add @lcsdg/dsh-quick-prompts
+dsh plugin --profile web add @max1997/dsh-quick-prompts
 
 # 方式二：Git
 dsh plugin --profile web add git@github.com:lcsdg/dsh-quick-prompts.git

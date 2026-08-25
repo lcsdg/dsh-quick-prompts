@@ -1,5 +1,5 @@
 {
-  "name": "@lcsdg/dsh-quick-prompts",
+  "name": "@max1997/dsh-quick-prompts",
   "description": "Quick prompts dock for the dsh web GUI: a row of user-defined prompt chips above the composer — click a chip to preview and edit its text (with {{placeholder}} fields), then sync it into the input or send it directly. Prompts are stored in the official settings document, not localStorage.",
   "version": "0.1.0",
   "type": "module",
