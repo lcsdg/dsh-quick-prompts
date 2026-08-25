@@ -8,7 +8,7 @@
  */
 import { clientBundle } from './shared/tsdown.client.ts'
 
-export default clientBundle('dsh-quick-prompts', ['src/index.ts'], {
+export default clientBundle('@max1997/dsh-quick-prompts', ['src/index.ts'], {
   libExternal: [
     '@deepseek-ai/dsh-settings',
     'schemastery',
