@@ -1,8 +1,20 @@
 # dsh-quick-prompts
 
+[![npm version](https://img.shields.io/npm/v/@max1997/dsh-quick-prompts)](https://www.npmjs.com/package/@max1997/dsh-quick-prompts)
+[![npm downloads](https://img.shields.io/npm/dm/@max1997/dsh-quick-prompts)](https://www.npmjs.com/package/@max1997/dsh-quick-prompts)
+[![license](https://img.shields.io/npm/l/@max1997/dsh-quick-prompts)](LICENSE)
+
+**把常用指令做成输入框上方的一排胶囊，点一下就填好、就能发。** 少打字，少重复复述需求。
+
 快捷指令面板 —— DSH Web GUI 输入区上方的一排指令胶囊。点击胶囊预览并编辑指令（支持 `{{占位符}}`），同步到输入框或直接发送。指令存储在官方 settings 文档（`ctx.settingsScope`），**清除浏览器缓存不会丢失**。
 
 A row of user-defined prompt chips above the composer. Click a chip to preview/edit its template (with `{{placeholder}}` fields), then sync it into the input or send directly. Prompts live in the official settings document — browser cache clears never touch them.
+
+## 预览 / Preview
+
+| 输入框上方的指令行 | 预览弹窗（占位符橙色高亮） | 两栏管理弹窗 |
+|---|---|---|
+| ![dock](docs/dock.png) | ![preview](docs/preview.png) | ![manager](docs/manager.png) |
 
 ## 功能 / Features
 
