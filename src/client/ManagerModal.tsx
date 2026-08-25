@@ -1,7 +1,8 @@
 /**
- * Manager modal: full CRUD over the prompt list — add, edit, remove,
- * reorder, import (paste JSON) and export (download JSON). Edits stage in
- * local state and are committed to the settings namespace only on Save.
+ * Manager modal: full CRUD over the prompt list, grouped by feature —
+ * add, edit, remove, reorder, assign features, import (paste JSON) and
+ * export (download JSON). Edits stage in local state and are committed to
+ * the settings namespace only on Save.
  */
 import { useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
@@ -19,10 +20,11 @@ export interface ManagerModalProps extends PropsLocale<'quick-prompts'> {
   onClose: () => void
 }
 
-/** Shape accepted by the import path (label/text only; ids are regenerated). */
+/** Shape accepted by the import path (ids are regenerated). */
 interface ImportedPrompt {
   label?: unknown
   text?: unknown
+  category?: unknown
 }
 
 /** Validate one imported entry and normalize it, or return null. */
@@ -31,7 +33,8 @@ function normalizeImported(raw: ImportedPrompt): PromptItem | null {
   const label = typeof raw.label === 'string' ? raw.label.trim() : ''
   const text = typeof raw.text === 'string' ? raw.text : ''
   if (label === '' && text === '') return null
-  return { id: crypto.randomUUID(), label: label || text.slice(0, 16), text }
+  const category = typeof raw.category === 'string' ? raw.category.trim() : ''
+  return { id: crypto.randomUUID(), label: label || text.slice(0, 16), text, ...(category !== '' ? { category } : {}) }
 }
 
 function newPrompt(): PromptItem {
@@ -43,6 +46,45 @@ const ICONS = {
   up: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10l4-4 4 4" /></svg>,
   down: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 6l4 4 4-4" /></svg>,
   trash: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4 4.5l.6 8a1.5 1.5 0 001.5 1.4h3.8a1.5 1.5 0 001.5-1.4l.6-8M6.7 7.2v4.1M9.3 7.2v4.1" /></svg>,
+}
+
+/** One rendering group: a feature (or the uncategorized bucket) + its rows. */
+interface Group {
+  /** Category key; '' = uncategorized. */
+  key: string
+  /** Display name (locale label for the uncategorized bucket). */
+  name: string
+  items: PromptItem[]
+}
+
+/**
+ * Group the staged items by feature, in first-appearance order, with the
+ * uncategorized bucket last.
+ */
+function groupByFeature(items: readonly PromptItem[], uncategorizedLabel: string): Group[] {
+  const groups: Group[] = []
+  const byKey = new Map<string, Group>()
+  let uncategorized: Group | null = null
+  for (const item of items) {
+    const key = (item.category ?? '').trim()
+    if (key === '') {
+      if (uncategorized === null) {
+        uncategorized = { key: '', name: uncategorizedLabel, items: [] }
+        byKey.set('', uncategorized)
+      }
+      uncategorized.items.push(item)
+      continue
+    }
+    let group = byKey.get(key)
+    if (group === undefined) {
+      group = { key, name: key, items: [] }
+      byKey.set(key, group)
+      groups.push(group)
+    }
+    group.items.push(item)
+  }
+  if (uncategorized !== null) groups.push(uncategorized)
+  return groups
 }
 
 /**
@@ -61,7 +103,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const patch = (id: string, field: 'label' | 'text', value: string): void => {
+  const patch = (id: string, field: 'label' | 'text' | 'category', value: string): void => {
     setItems((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)))
     setNotice(null)
   }
@@ -82,8 +124,11 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
     setNotice(null)
   }
 
-  const add = (): void => {
-    setItems((prev) => [...prev, newPrompt()])
+  const add = (category: string): void => {
+    const item = newPrompt()
+    const clean = category.trim()
+    if (clean !== '') item.category = clean
+    setItems((prev) => [...prev, item])
     setNotice(null)
   }
 
@@ -105,7 +150,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   }
 
   const doExport = (): void => {
-    const payload = items.map(({ label, text }) => ({ label, text }))
+    const payload = items.map(({ label, text, category }) => ({ label, text, ...(category !== undefined && category.trim() !== '' ? { category: category.trim() } : {}) }))
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
@@ -119,7 +164,12 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
     if (saving) return
     setSaving(true)
     try {
-      const clean = items.filter((p) => p.label.trim() !== '' || p.text.trim() !== '').map((p) => ({ ...p, label: p.label.trim() }))
+      const clean = items
+        .filter((p) => p.label.trim() !== '' || p.text.trim() !== '')
+        .map((p) => {
+          const category = (p.category ?? '').trim()
+          return { ...p, label: p.label.trim(), ...(category !== '' ? { category } : { category: undefined }) }
+        })
       await scope.set('prompts', clean)
       onClose()
     } catch {
@@ -128,52 +178,85 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   }
 
   const dirty = JSON.stringify(items) !== JSON.stringify(snapshot.status === 'ready' ? (snapshot.value?.prompts ?? []) : [])
+  const groups = groupByFeature(items, t('dock.uncategorized'))
+  // Datalist options: distinct feature names across the staged items.
+  const knownCategories = [...new Set(items.map((p) => (p.category ?? '').trim()).filter(Boolean))]
 
   return (
     <div className={css.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={css.card} role="dialog" aria-modal="true" style={{ width: 'min(640px, calc(100vw - 48px))' }}>
+      <div className={css.card} role="dialog" aria-modal="true" style={{ width: 'min(660px, calc(100vw - 48px))' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <p className={css.title}>{t('manager.title')}</p>
           {dirty ? <span className={css.hint}>{t('manager.dirty')}</span> : null}
         </div>
 
         <div className={css.managerBody}>
-          {items.length === 0 ? (
+          {groups.length === 0 ? (
             <span className={css.hint} style={{ padding: '12px 0', textAlign: 'center' }}>{t('manager.empty')}</span>
           ) : (
             <div className={css.list}>
-              {items.map((item, index) => (
-                <div key={item.id} className={css.row}>
-                  <div className={css.rowHeader}>
-                    <span className={css.rowIndex}>{String(index + 1)}</span>
-                    <input
-                      className={css.smallInput}
-                      style={{ flex: 'none', width: 160 }}
-                      value={item.label}
-                      placeholder={t('manager.labelField')}
-                      onChange={(e) => patch(item.id, 'label', e.target.value)}
-                    />
-                    <span className={css.rowActions}>
-                      <button type="button" className={css.iconButton} title={t('manager.moveUp')} disabled={index === 0} onClick={() => move(index, -1)}>{ICONS.up}</button>
-                      <button type="button" className={css.iconButton} title={t('manager.moveDown')} disabled={index === items.length - 1} onClick={() => move(index, 1)}>{ICONS.down}</button>
-                      <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => remove(item.id)}>{ICONS.trash}</button>
-                    </span>
+              {groups.map((group) => (
+                <div key={group.key === '' ? '__uncat__' : group.key} className={css.group}>
+                  <div className={css.groupHeader}>
+                    <span className={css.groupName}>{group.name}</span>
+                    <span className={css.groupCount}>{String(group.items.length)}</span>
+                    <span className={css.dockSpacer} />
+                    <button type="button" className={css.button} style={{ lineHeight: '20px', padding: '0 8px' }} onClick={() => add(group.key)}>
+                      {t('manager.add')}
+                    </button>
                   </div>
-                  <textarea
-                    className={css.textarea}
-                    style={{ minHeight: 64 }}
-                    value={item.text}
-                    placeholder={t('manager.textField')}
-                    onChange={(e) => patch(item.id, 'text', e.target.value)}
-                    spellCheck={false}
-                  />
+                  {group.items.map((item, index) => {
+                    const globalIndex = items.indexOf(item)
+                    return (
+                      <div key={item.id} className={css.row}>
+                        <div className={css.rowHeader}>
+                          <span className={css.rowIndex}>{String(globalIndex + 1)}</span>
+                          <input
+                            className={css.smallInput}
+                            style={{ flex: 'none', width: 150 }}
+                            value={item.label}
+                            placeholder={t('manager.labelField')}
+                            onChange={(e) => patch(item.id, 'label', e.target.value)}
+                          />
+                          <input
+                            className={css.smallInput}
+                            style={{ flex: 'none', width: 130 }}
+                            value={item.category ?? ''}
+                            list="quick-prompts-categories"
+                            placeholder={t('manager.categoryField')}
+                            onChange={(e) => patch(item.id, 'category', e.target.value)}
+                          />
+                          <span className={css.rowActions}>
+                            <button type="button" className={css.iconButton} title={t('manager.moveUp')} disabled={globalIndex === 0} onClick={() => move(globalIndex, -1)}>{ICONS.up}</button>
+                            <button type="button" className={css.iconButton} title={t('manager.moveDown')} disabled={globalIndex === items.length - 1} onClick={() => move(globalIndex, 1)}>{ICONS.down}</button>
+                            <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => remove(item.id)}>{ICONS.trash}</button>
+                          </span>
+                        </div>
+                        <textarea
+                          className={css.textarea}
+                          style={{ minHeight: 56 }}
+                          value={item.text}
+                          placeholder={t('manager.textField')}
+                          onChange={(e) => patch(item.id, 'text', e.target.value)}
+                          spellCheck={false}
+                        />
+                      </div>
+                    )
+                  })}
+                  {group.items.length === 0 ? (
+                    <span className={css.hint} style={{ padding: '4px 0 8px' }}>{t('manager.groupEmpty')}</span>
+                  ) : null}
                 </div>
               ))}
             </div>
           )}
 
+          <datalist id="quick-prompts-categories">
+            {knownCategories.map((category) => <option key={category} value={category} />)}
+          </datalist>
+
           <div className={css.addRow}>
-            <button type="button" className={css.button} onClick={add}>{t('manager.add')}</button>
+            <button type="button" className={css.button} onClick={() => add('')}>{t('manager.add')}</button>
           </div>
 
           {importOpen ? (

@@ -5,6 +5,9 @@
 export declare const zh: {
     'dock.title': string;
     'dock.manage': string;
+    'dock.all': string;
+    'dock.uncategorized': string;
+    'dock.noPrompts': string;
     'pill.send': string;
     'pill.preview': string;
     'pill.placeholderHint': string;
@@ -28,6 +31,10 @@ export declare const zh: {
     'manager.remove': string;
     'manager.labelField': string;
     'manager.textField': string;
+    'manager.categoryField': string;
+    'manager.categoryPlaceholder': string;
+    'manager.addCategory': string;
+    'manager.groupEmpty': string;
     'manager.empty': string;
     'manager.import': string;
     'manager.export': string;
@@ -41,6 +48,9 @@ export declare const zh: {
 export declare const en: {
     'dock.title': string;
     'dock.manage': string;
+    'dock.all': string;
+    'dock.uncategorized': string;
+    'dock.noPrompts': string;
     'pill.send': string;
     'pill.preview': string;
     'pill.placeholderHint': string;
@@ -64,6 +74,10 @@ export declare const en: {
     'manager.remove': string;
     'manager.labelField': string;
     'manager.textField': string;
+    'manager.categoryField': string;
+    'manager.categoryPlaceholder': string;
+    'manager.addCategory': string;
+    'manager.groupEmpty': string;
     'manager.empty': string;
     'manager.import': string;
     'manager.export': string;

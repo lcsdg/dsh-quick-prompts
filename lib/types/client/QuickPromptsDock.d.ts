@@ -22,7 +22,7 @@ export interface QuickPromptsDockProps extends QuickPromptsInjected, PropsLocale
     /** InputZone owner share (current draft text, used for append). */
     input: DockInputState;
 }
-/** The composer dock row. Renders nothing while settings are loading. */
+/** The composer dock. Renders nothing while settings are loading. */
 export declare const QuickPromptsDock: import("react").MemoExoticComponent<(props: QuickPromptsDockProps) => React.JSX.Element | null>;
 /** Re-export so the client entry can name the locale key type. */
 export type DockLocaleKey = QuickPromptsKey;

@@ -11,6 +11,12 @@ export interface PromptItem {
     label: string;
     /** Prompt template; `{{name}}` spans become fill-in fields in the preview. */
     text: string;
+    /**
+     * Feature/category this prompt belongs to — a free-form string that groups
+     * prompts in the dock (feature tabs) and in the manager (grouped rows).
+     * Empty string = uncategorized (shown under "All").
+     */
+    category?: string;
 }
 /** The quick-prompts settings section: an ordered prompt list. */
 export interface QuickPromptsSettings {

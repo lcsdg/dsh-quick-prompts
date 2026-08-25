@@ -16,7 +16,7 @@ export declare const name = "quick-prompts";
  * depending on a Host package.
  */
 export declare const QUICK_PROMPTS_SETTINGS_NAMESPACE: import("@deepseek-ai/dsh-settings").SettingsNamespace;
-/** One prompt entry: unique id, chip label and the prompt template text. */
+/** One prompt entry: unique id, chip label, prompt template and feature group. */
 export interface PromptItem {
     /** Stable unique id (kept when the user edits label/text). */
     id: string;
@@ -24,6 +24,12 @@ export interface PromptItem {
     label: string;
     /** Prompt template; `{{name}}` spans become fill-in fields in the preview. */
     text: string;
+    /**
+     * Feature/category this prompt belongs to — a free-form string that groups
+     * prompts in the dock (feature tabs) and in the manager (grouped rows).
+     * Empty string = uncategorized (shown under "All").
+     */
+    category?: string;
 }
 /** The quick-prompts settings section: an ordered prompt list. */
 export interface QuickPromptsSettings {

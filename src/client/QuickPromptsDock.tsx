@@ -1,11 +1,12 @@
 /**
- * The quick-prompts composer dock: a row of prompt chips above the composer.
+ * The quick-prompts composer dock: feature tabs plus the prompt chips of the
+ * selected feature, above the composer.
  *
+ * - Feature tabs (All / each category) filter which prompts are shown.
  * - Click a chip → preview/editor modal (edit the template for this one use,
  *   fill {{placeholders}}, then sync into the input or send directly).
- * - Click the paper-plane that appears on chip hover → send directly, unless
- *   the template has {{placeholders}} (then the preview modal opens so the
- *   user can fill them).
+ * - Click the paper-plane next to a chip → send directly, unless the template
+ *   has {{placeholders}} (then the preview modal opens so the user can fill).
  * - The gear opens the manager modal (add/edit/remove/reorder/import/export).
  */
 import { memo, useEffect, useState } from 'react'
@@ -63,7 +64,31 @@ const GEAR_ICON = (
   </svg>
 )
 
-/** The composer dock row. Renders nothing while settings are loading. */
+/**
+ * Distinct feature names across the prompt list, in first-appearance order.
+ * Uncategorized prompts (empty/absent category) are exposed as the
+ * "uncategorized" pseudo-feature so they stay reachable in the dock.
+ */
+function featureTabs(prompts: readonly PromptItem[]): { key: string; name: string }[] {
+  const tabs: { key: string; name: string }[] = []
+  const seen = new Set<string>()
+  let hasUncategorized = false
+  for (const prompt of prompts) {
+    const category = (prompt.category ?? '').trim()
+    if (category === '') {
+      hasUncategorized = true
+      continue
+    }
+    if (!seen.has(category)) {
+      seen.add(category)
+      tabs.push({ key: category, name: category })
+    }
+  }
+  if (hasUncategorized) tabs.push({ key: '', name: '' })
+  return tabs
+}
+
+/** The composer dock. Renders nothing while settings are loading. */
 export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromptsDockProps): React.JSX.Element | null {
   const { scope, insertIntoInput, sendPrompt, session, t } = props
   const [snapshot, setSnapshot] = useState(() => scope.getSnapshot())
@@ -71,6 +96,8 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
   const [managerOpen, setManagerOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  /** Selected feature key; null = All. '' = uncategorized. */
+  const [feature, setFeature] = useState<string | null>(null)
 
   useEffect(() => scope.subscribe(() => setSnapshot(scope.getSnapshot())), [scope])
 
@@ -79,6 +106,14 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
   // While the namespace is still loading (or unavailable), keep the dock out
   // of the way instead of flashing an empty row.
   if (snapshot.status !== 'ready') return null
+
+  const tabs = featureTabs(prompts)
+  const visible = feature === null ? prompts : prompts.filter((p) => (p.category ?? '').trim() === feature)
+
+  // Drop a stale selection when the feature disappeared (e.g. after a save).
+  useEffect(() => {
+    if (feature !== null && !tabs.some((tab) => tab.key === feature)) setFeature(null)
+  }, [feature, tabs])
 
   const openPreview = (item: PromptItem, fromSend: boolean): void => {
     setSendError(null)
@@ -118,53 +153,81 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
   return (
     <>
       <div className={css.dock} role="toolbar" aria-label="quick prompts">
-        <span className={css.dockTag} title="quick prompts">
-          <svg className={css.dockTagIcon} viewBox="0 0 16 16" fill="currentColor">
-            <path d="M9.2 1L3 9.2h3.6L6 15l6.2-8.2H8.6L9.2 1z" />
-          </svg>
-          {t('dock.title')}
-        </span>
-        {prompts.map((item) => (
+        <div className={css.dockTop}>
+          <span className={css.dockTag} title="quick prompts">
+            <svg className={css.dockTagIcon} viewBox="0 0 16 16" fill="currentColor">
+              <path d="M9.2 1L3 9.2h3.6L6 15l6.2-8.2H8.6L9.2 1z" />
+            </svg>
+            {t('dock.title')}
+          </span>
+          <div className={css.tabs} role="tablist" aria-label="features">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={feature === null}
+              className={`${css.tab}${feature === null ? ` ${css.tabActive}` : ''}`}
+              onClick={() => setFeature(null)}
+            >
+              {t('dock.all')}
+            </button>
+            {tabs.map((tab) => (
+              <button
+                key={tab.key === '' ? '__uncat__' : tab.key}
+                type="button"
+                role="tab"
+                aria-selected={feature === tab.key}
+                className={`${css.tab}${feature === tab.key ? ` ${css.tabActive}` : ''}`}
+                onClick={() => setFeature(tab.key)}
+              >
+                {tab.name === '' ? t('dock.uncategorized') : tab.name}
+              </button>
+            ))}
+          </div>
+          <span className={css.dockSpacer} />
           <button
-            key={item.id}
             type="button"
-            className={css.chip}
-            title={hasPlaceholders(item.text) ? t('pill.placeholderHint') : t('pill.preview')}
-            onClick={() => openPreview(item, false)}
+            className={css.gear}
+            title={t('dock.manage')}
+            onClick={() => setManagerOpen(true)}
           >
-            <span className={css.chipLabel}>{item.label || '…'}</span>
-            <span
-              role="button"
-              tabIndex={0}
-              className={css.sendButton}
-              title={t('pill.send')}
-              onClick={(e) => {
-                e.stopPropagation()
-                void handleSend(item)
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
+            {GEAR_ICON}
+          </button>
+        </div>
+        <div className={css.chipRow}>
+          {visible.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className={css.chip}
+              title={hasPlaceholders(item.text) ? t('pill.placeholderHint') : t('pill.preview')}
+              onClick={() => openPreview(item, false)}
+            >
+              <span className={css.chipLabel}>{item.label || '…'}</span>
+              <span
+                role="button"
+                tabIndex={0}
+                className={css.sendButton}
+                title={t('pill.send')}
+                onClick={(e) => {
                   e.stopPropagation()
                   void handleSend(item)
-                }
-              }}
-            >
-              {SEND_ICON}
-            </span>
-          </button>
-        ))}
-        <button
-          type="button"
-          className={css.gear}
-          title={t('dock.manage')}
-          onClick={() => setManagerOpen(true)}
-        >
-          {GEAR_ICON}
-        </button>
-        {prompts.length === 0 ? (
-          <span className={css.dockHint}>{t('manager.empty')}</span>
-        ) : null}
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    void handleSend(item)
+                  }
+                }}
+              >
+                {SEND_ICON}
+              </span>
+            </button>
+          ))}
+          {visible.length === 0 ? (
+            <span className={css.dockHint}>{feature === null ? t('manager.empty') : t('dock.noPrompts')}</span>
+          ) : null}
+        </div>
       </div>
 
       {preview !== null ? (

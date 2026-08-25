@@ -1,13 +1,82 @@
 /* quick-prompts surface styles — all colors ride the DSW design tokens so
    light/dark themes and any future theme pack apply automatically. */
 
-/* ---- composer dock row ---- */
+/* ---- composer dock ---- */
 .dock {
   box-sizing: border-box;
   width: calc(100% - var(--dsh-composer-side-clearance) - var(--dsh-composer-side-clearance) - var(--dsh-composer-dock-inset) - var(--dsh-composer-dock-inset));
   max-width: calc(var(--dsh-composer-card-max-width) - var(--dsh-composer-dock-inset) - var(--dsh-composer-dock-inset));
   margin: 0 auto calc(0px - var(--dsh-composer-stack-gap) - 3px);
-  padding: 5px 10px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: none;
+  background: var(--dsw-alias-bg-base, var(--dsw-alias-fill-primary));
+  border: 1px solid var(--dsw-alias-border-l1);
+  border-radius: 10px;
+}
+
+.dockTop {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.dockTop::-webkit-scrollbar {
+  display: none;
+}
+
+.dockSpacer {
+  flex: auto;
+}
+
+/* ---- feature tabs ---- */
+.tabs {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.tab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: inherit;
+  font-size: 11px;
+  line-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.tab:hover {
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-fill-secondary);
+}
+
+.tabActive {
+  color: var(--qp-orange, #f59e0b);
+  background: rgb(245 158 11 / 0.1);
+  font-weight: 500;
+}
+
+.tabActive:hover {
+  color: var(--qp-orange, #f59e0b);
+  background: rgb(245 158 11 / 0.16);
+}
+
+/* ---- prompt chip row ---- */
+.chipRow {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -15,12 +84,10 @@
   flex: none;
   overflow-x: auto;
   scrollbar-width: none;
-  background: var(--dsw-alias-bg-base, var(--dsw-alias-fill-primary));
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-radius: 10px;
+  min-height: 24px;
 }
 
-.dock::-webkit-scrollbar {
+.chipRow::-webkit-scrollbar {
   display: none;
 }
 
@@ -330,11 +397,42 @@
   cursor: default;
 }
 
+/* ---- manager groups ---- */
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+}
+
+.groupName {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.groupCount {
+  font-size: 11px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+  background: var(--dsw-alias-fill-secondary);
+  border-radius: 999px;
+  padding: 0 8px;
+}
+
 /* ---- manager list ---- */
 .list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   overflow-y: auto;
   padding-right: 2px;
 }
