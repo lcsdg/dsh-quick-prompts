@@ -439,15 +439,23 @@
 }
 
 /* ---- highlight overlay: colored template below, transparent-text
-   textarea above (same metrics so soft wrapping lines up) ---- */
+   textarea above. The editor area is a flex item inside the modal card:
+   it shrinks to whatever space is left so the action buttons always stay
+   on screen, and the textarea scrolls internally when the text is long.
+   The highlight layer is pinned to the textarea and mirrors its scroll. ---- */
 .highlightWrap {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .highlightBack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   box-sizing: border-box;
-  width: 100%;
-  min-height: 300px;
   margin: 0;
   padding: 8px 10px;
   border: 1px solid transparent;
@@ -464,9 +472,9 @@
 }
 
 .highlightFront {
-  position: absolute;
-  inset: 0;
-  min-height: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 120px;
   background: transparent;
   color: transparent;
   /* orange caret: clearly visible on both light and dark themes */
@@ -554,6 +562,7 @@
 /* dedicated prompt editor dialog: wide + tall textarea */
 .editorCard {
   width: min(640px, calc(100vw - 48px));
+  overflow-y: auto;
 }
 
 /* delete confirmation dialog */

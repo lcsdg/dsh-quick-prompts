@@ -4,7 +4,7 @@
  * any {{placeholder}} fields, then either syncs the filled text into the
  * composer input or sends it directly.
  */
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PromptItem } from '../types.ts'
 import { PLACEHOLDER_PATTERN, extractPlaceholders, fillPlaceholders } from './placeholder.ts'
@@ -70,6 +70,7 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
     return out
   })
   const [mode, setMode] = useState<SyncMode>('append')
+  const backRef = useRef<HTMLPreElement>(null)
 
   const placeholders = useMemo(() => extractPlaceholders(text), [text])
 
@@ -94,11 +95,18 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
         <div className={css.fieldSection}>
           <span className={css.label}>{t('preview.textHint')}</span>
           <div className={css.highlightWrap}>
-            <pre className={css.highlightBack} aria-hidden="true">{renderHighlighted(text)}</pre>
+            <pre ref={backRef} className={css.highlightBack} aria-hidden="true">{renderHighlighted(text)}</pre>
             <textarea
               className={`${css.textarea} ${css.highlightFront}`}
               value={text}
               onChange={(e) => setText(e.target.value)}
+              onScroll={(e) => {
+                const back = backRef.current
+                if (back) {
+                  back.scrollTop = e.currentTarget.scrollTop
+                  back.scrollLeft = e.currentTarget.scrollLeft
+                }
+              }}
               autoFocus
               spellCheck={false}
             />

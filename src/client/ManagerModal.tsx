@@ -6,7 +6,7 @@
  * the rows. Edits stage in local state and are committed to the settings
  * namespace only on Save.
  */
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
 import type { PromptCategory, PromptItem, QuickPromptsSettings } from '../types.ts'
@@ -92,6 +92,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const [editor, setEditor] = useState<{ id: string; label: string; text: string } | null>(null)
   /** Delete confirmation: kind + target id + display label. */
   const [confirm, setConfirm] = useState<{ kind: 'category' | 'prompt'; id: string; label: string } | null>(null)
+  const editorBackRef = useRef<HTMLPreElement>(null)
 
   const { categories, prompts } = staged
 
@@ -442,12 +443,19 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
             <div className={css.fieldSection}>
               <span className={css.label}>{t('manager.textField')}</span>
               <div className={css.highlightWrap}>
-                <pre className={css.highlightBack} aria-hidden="true">{renderHighlighted(editor.text)}</pre>
+                <pre ref={editorBackRef} className={css.highlightBack} aria-hidden="true">{renderHighlighted(editor.text)}</pre>
                 <textarea
                   className={`${css.textarea} ${css.highlightFront}`}
                   value={editor.text}
                   placeholder={t('manager.textField')}
                   onChange={(e) => setEditor((prev) => (prev === null ? prev : { ...prev, text: e.target.value }))}
+                  onScroll={(e) => {
+                    const back = editorBackRef.current
+                    if (back) {
+                      back.scrollTop = e.currentTarget.scrollTop
+                      back.scrollLeft = e.currentTarget.scrollLeft
+                    }
+                  }}
                   spellCheck={false}
                   autoFocus
                 />
