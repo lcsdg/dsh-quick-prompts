@@ -857,6 +857,10 @@
   cursor: default;
 }
 
+.iconButton.danger {
+  color: var(--dsw-alias-text-danger, #d33);
+}
+
 .iconButton.danger:hover:not(:disabled) {
   color: var(--dsw-alias-text-danger, #d33);
   background: color-mix(in srgb, var(--dsw-alias-text-danger, #d33) 12%, transparent);
