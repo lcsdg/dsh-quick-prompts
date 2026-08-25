@@ -58,6 +58,29 @@ const SEND_ICON = (
   </svg>
 )
 
+/** localStorage key for one session's selected feature (null = All). */
+function featureKey(id: SessionId): string {
+  return `dsh-quick-prompts:feature:${id}`
+}
+
+function readStoredFeature(id: SessionId): string | null {
+  try {
+    const v = localStorage.getItem(featureKey(id))
+    return v === null ? null : v
+  } catch {
+    return null
+  }
+}
+
+function writeStoredFeature(id: SessionId, value: string | null): void {
+  try {
+    if (value === null) localStorage.removeItem(featureKey(id))
+    else localStorage.setItem(featureKey(id), value)
+  } catch {
+    /* storage unavailable — the in-memory selection still works this session */
+  }
+}
+
 const GEAR_ICON = (
   <svg className={css.gearIcon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="8" cy="8" r="2.2" />
@@ -84,9 +107,14 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
   /** Selected feature id; null = All. '' = uncategorized. */
-  const [feature, setFeature] = useState<string | null>(null)
+  const [feature, setFeature] = useState<string | null>(() => readStoredFeature(session.sessionId))
 
   useEffect(() => scope.subscribe(() => setSnapshot(scope.getSnapshot())), [scope])
+
+  const selectFeature = (value: string | null): void => {
+    setFeature(value)
+    writeStoredFeature(session.sessionId, value)
+  }
 
   // While the namespace is still loading (or unavailable), keep the dock out
   // of the way instead of flashing an empty row.
@@ -99,8 +127,11 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
 
   // Drop a stale selection when the feature disappeared (e.g. after a save).
   useEffect(() => {
-    if (feature !== null && !tabs.some((tab) => tab.key === feature)) setFeature(null)
-  }, [feature, tabs])
+    if (feature !== null && !tabs.some((tab) => tab.key === feature)) {
+      setFeature(null)
+      writeStoredFeature(session.sessionId, null)
+    }
+  }, [feature, tabs, session.sessionId])
 
   const openPreview = (item: { id: string; label: string; text: string }, fromSend: boolean): void => {
     setSendError(null)
@@ -153,7 +184,7 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
               role="tab"
               aria-selected={feature === null}
               className={`${css.tab}${feature === null ? ` ${css.tabActive}` : ''}`}
-              onClick={() => setFeature(null)}
+              onClick={() => selectFeature(null)}
             >
               {t('dock.all')}
             </button>
@@ -164,7 +195,7 @@ export const QuickPromptsDock = memo(function QuickPromptsDock(props: QuickPromp
                 role="tab"
                 aria-selected={feature === tab.key}
                 className={`${css.tab}${feature === tab.key ? ` ${css.tabActive}` : ''}`}
-                onClick={() => setFeature(tab.key)}
+                onClick={() => selectFeature(tab.key)}
               >
                 {tab.name === '' ? t('dock.uncategorized') : tab.name}
               </button>
