@@ -4,7 +4,7 @@
  * any {{placeholder}} fields, then either syncs the filled text into the
  * composer input or sends it directly.
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { PromptItem } from '../types.ts'
 import { extractPlaceholders, fillPlaceholders } from './placeholder.ts'
@@ -52,12 +52,6 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
     return out
   })
   const [mode, setMode] = useState<SyncMode>('append')
-  const [editing, setEditing] = useState(false)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  useEffect(() => {
-    if (editing) textareaRef.current?.focus()
-  }, [editing])
 
   const placeholders = useMemo(() => extractPlaceholders(text), [text])
 
@@ -81,37 +75,13 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
 
         <div>
           <span className={css.label}>{t('preview.textHint')}</span>
-          <div className={css.previewWrap}>
-            {editing ? (
-              <textarea
-                className={css.textarea}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                spellCheck={false}
-                ref={textareaRef}
-              />
-            ) : (
-              <pre className={css.previewBox}>{text}</pre>
-            )}
-            <button
-              type="button"
-              className={css.previewEdit}
-              title={editing ? t('preview.done') : t('preview.edit')}
-              aria-label={editing ? t('preview.done') : t('preview.edit')}
-              onClick={() => setEditing((v) => !v)}
-            >
-              {editing ? (
-                <svg className={css.icon} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M3 8.5 6.5 12 13 4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              ) : (
-                <svg className={css.icon} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-                  <path d="M11.4 2.6a1.6 1.6 0 0 1 2 2L5.6 12.4l-3.1 1.1 1.1-3.1L11.4 2.6Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-                  <path d="M10.5 3.5l2 2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-                </svg>
-              )}
-            </button>
-          </div>
+          <textarea
+            className={css.textarea}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoFocus
+            spellCheck={false}
+          />
         </div>
 
         {placeholders.length > 0 ? (

@@ -356,6 +356,21 @@
   height: 15px;
 }
 
+/* empty read-only state inside the manager rows */
+.previewEmpty {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 44px 8px 10px;
+  border: 1px dashed var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 20px;
+  user-select: none;
+}
+
 .smallInput {
   box-sizing: border-box;
   width: 100%;

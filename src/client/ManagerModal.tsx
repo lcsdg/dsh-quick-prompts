@@ -55,6 +55,7 @@ const ICONS = {
   trash: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 011-1h1a1 1 0 011 1v1.5M4 4.5l.6 8a1.5 1.5 0 001.5 1.4h3.8a1.5 1.5 0 001.5-1.4l.6-8M6.7 7.2v4.1M9.3 7.2v4.1" /></svg>,
   rename: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><path d="M11.3 2.7l2 2L5.5 12.5l-2.8.8.8-2.8 7.8-7.8z" /></svg>,
   add: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M8 3v10M3 8h10" /></svg>,
+  done: <svg className={css.icon} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8.5 6.5 12 13 4.5" /></svg>,
 }
 
 /**
@@ -86,6 +87,8 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const [importText, setImportText] = useState('')
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState(false)
+  /** Prompt id whose text is being edited (null = all texts read-only). */
+  const [editingTextId, setEditingTextId] = useState<string | null>(null)
 
   const { categories, prompts } = staged
 
@@ -118,7 +121,10 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   }
 
   const addPrompt = (categoryId: string): void => {
-    setStaged((prev) => ({ ...prev, prompts: [...prev.prompts, newPrompt(categoryId)] }))
+    const item = newPrompt(categoryId)
+    setStaged((prev) => ({ ...prev, prompts: [...prev.prompts, item] }))
+    // A brand-new prompt opens straight into text-editing mode.
+    setEditingTextId(item.id)
     setNotice(null)
   }
 
@@ -339,14 +345,32 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                           <button type="button" className={`${css.iconButton} ${css.danger}`} title={t('manager.remove')} onClick={() => removePrompt(item.id)}>{ICONS.trash}</button>
                         </span>
                       </div>
-                      <textarea
-                        className={css.textarea}
-                        style={{ minHeight: 56 }}
-                        value={item.text}
-                        placeholder={t('manager.textField')}
-                        onChange={(e) => patchPrompt(item.id, 'text', e.target.value)}
-                        spellCheck={false}
-                      />
+                      <div className={css.previewWrap}>
+                        {editingTextId === item.id ? (
+                          <textarea
+                            className={css.textarea}
+                            style={{ minHeight: 56 }}
+                            value={item.text}
+                            placeholder={t('manager.textField')}
+                            onChange={(e) => patchPrompt(item.id, 'text', e.target.value)}
+                            spellCheck={false}
+                            autoFocus
+                          />
+                        ) : item.text !== '' ? (
+                          <pre className={css.previewBox}>{item.text}</pre>
+                        ) : (
+                          <span className={css.previewEmpty}>{t('manager.textField')}</span>
+                        )}
+                        <button
+                          type="button"
+                          className={css.previewEdit}
+                          title={editingTextId === item.id ? t('preview.done') : t('preview.edit')}
+                          aria-label={editingTextId === item.id ? t('preview.done') : t('preview.edit')}
+                          onClick={() => setEditingTextId(editingTextId === item.id ? null : item.id)}
+                        >
+                          {editingTextId === item.id ? ICONS.done : ICONS.rename}
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
