@@ -1,0 +1,77 @@
+/**
+ * quick-prompts UI copy. The zh dictionary is the key source; the en side
+ * must carry the exact same key set.
+ */
+export declare const zh: {
+    'dock.title': string;
+    'dock.manage': string;
+    'pill.send': string;
+    'pill.preview': string;
+    'pill.placeholderHint': string;
+    'preview.title': string;
+    'preview.label': string;
+    'preview.textHint': string;
+    'preview.placeholderSection': string;
+    'preview.placeholderEmpty': string;
+    'preview.appendMode': string;
+    'preview.replaceMode': string;
+    'preview.cancel': string;
+    'preview.syncToInput': string;
+    'preview.send': string;
+    'preview.sendFailed': string;
+    'manager.title': string;
+    'manager.add': string;
+    'manager.save': string;
+    'manager.cancel': string;
+    'manager.moveUp': string;
+    'manager.moveDown': string;
+    'manager.remove': string;
+    'manager.labelField': string;
+    'manager.textField': string;
+    'manager.empty': string;
+    'manager.import': string;
+    'manager.export': string;
+    'manager.importTitle': string;
+    'manager.importPlaceholder': string;
+    'manager.importDone': string;
+    'manager.importError': string;
+    'manager.exportHint': string;
+    'manager.dirty': string;
+};
+export declare const en: {
+    'dock.title': string;
+    'dock.manage': string;
+    'pill.send': string;
+    'pill.preview': string;
+    'pill.placeholderHint': string;
+    'preview.title': string;
+    'preview.label': string;
+    'preview.textHint': string;
+    'preview.placeholderSection': string;
+    'preview.placeholderEmpty': string;
+    'preview.appendMode': string;
+    'preview.replaceMode': string;
+    'preview.cancel': string;
+    'preview.syncToInput': string;
+    'preview.send': string;
+    'preview.sendFailed': string;
+    'manager.title': string;
+    'manager.add': string;
+    'manager.save': string;
+    'manager.cancel': string;
+    'manager.moveUp': string;
+    'manager.moveDown': string;
+    'manager.remove': string;
+    'manager.labelField': string;
+    'manager.textField': string;
+    'manager.empty': string;
+    'manager.import': string;
+    'manager.export': string;
+    'manager.importTitle': string;
+    'manager.importPlaceholder': string;
+    'manager.importDone': string;
+    'manager.importError': string;
+    'manager.exportHint': string;
+    'manager.dirty': string;
+};
+export type QuickPromptsKey = keyof typeof zh;

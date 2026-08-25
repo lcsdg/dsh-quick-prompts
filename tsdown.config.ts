@@ -1,0 +1,16 @@
+/**
+ * Standalone build config for the dsh-quick-prompts plugin.
+ *
+ * Uses the bundled client-bundle preset (shared/tsdown.client.ts — closure-
+ * factory artifact for window.__ModuleLoader__, CSS Modules inlined, externals
+ * resolved through the loader module table). The node half builds from src
+ * (tsdown compiles TS directly) and types ship from lib/types (tsc).
+ */
+import { clientBundle } from './shared/tsdown.client.ts'
+
+export default clientBundle('dsh-quick-prompts', ['src/index.ts'], {
+  libExternal: [
+    '@deepseek-ai/dsh-settings',
+    'schemastery',
+  ],
+})
