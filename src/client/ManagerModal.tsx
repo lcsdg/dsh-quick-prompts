@@ -87,8 +87,8 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const [importText, setImportText] = useState('')
   const [notice, setNotice] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null)
   const [saving, setSaving] = useState(false)
-  /** Prompt id whose text is being edited (null = all texts read-only). */
-  const [editingTextId, setEditingTextId] = useState<string | null>(null)
+  /** Prompt open in the dedicated editor dialog (null = no dialog open). */
+  const [editor, setEditor] = useState<{ id: string; label: string; text: string } | null>(null)
 
   const { categories, prompts } = staged
 
@@ -123,8 +123,17 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const addPrompt = (categoryId: string): void => {
     const item = newPrompt(categoryId)
     setStaged((prev) => ({ ...prev, prompts: [...prev.prompts, item] }))
-    // A brand-new prompt opens straight into text-editing mode.
-    setEditingTextId(item.id)
+    // A brand-new prompt opens straight into the editor dialog.
+    setEditor({ id: item.id, label: item.label, text: item.text })
+    setNotice(null)
+  }
+
+  /** Commit the editor dialog draft into the staged list and close it. */
+  const commitEditor = (): void => {
+    if (editor === null) return
+    patchPrompt(editor.id, 'label', editor.label)
+    patchPrompt(editor.id, 'text', editor.text)
+    setEditor(null)
     setNotice(null)
   }
 
@@ -235,8 +244,9 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
   const dirty = JSON.stringify(staged) !== JSON.stringify({ categories: stored.categories, prompts: stored.prompts })
 
   return (
-    <div className={css.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={`${css.card} ${css.managerCard}`} role="dialog" aria-modal="true">
+    <>
+      <div className={css.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
+        <div className={`${css.card} ${css.managerCard}`} role="dialog" aria-modal="true">
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <p className={css.title}>{t('manager.title')}</p>
           {dirty ? <span className={css.hint}>{t('manager.dirty')}</span> : null}
@@ -346,17 +356,7 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                         </span>
                       </div>
                       <div className={css.previewWrap}>
-                        {editingTextId === item.id ? (
-                          <textarea
-                            className={css.textarea}
-                            style={{ minHeight: 56 }}
-                            value={item.text}
-                            placeholder={t('manager.textField')}
-                            onChange={(e) => patchPrompt(item.id, 'text', e.target.value)}
-                            spellCheck={false}
-                            autoFocus
-                          />
-                        ) : item.text !== '' ? (
+                        {item.text !== '' ? (
                           <pre className={css.previewBox}>{item.text}</pre>
                         ) : (
                           <span className={css.previewEmpty}>{t('manager.textField')}</span>
@@ -364,11 +364,11 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
                         <button
                           type="button"
                           className={css.previewEdit}
-                          title={editingTextId === item.id ? t('preview.done') : t('preview.edit')}
-                          aria-label={editingTextId === item.id ? t('preview.done') : t('preview.edit')}
-                          onClick={() => setEditingTextId(editingTextId === item.id ? null : item.id)}
+                          title={t('preview.edit')}
+                          aria-label={t('preview.edit')}
+                          onClick={() => setEditor({ id: item.id, label: item.label, text: item.text })}
                         >
-                          {editingTextId === item.id ? ICONS.done : ICONS.rename}
+                          {ICONS.rename}
                         </button>
                       </div>
                     </div>
@@ -410,7 +410,54 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+
+      {/* ---- dedicated prompt editor dialog (large textarea) ---- */}
+      {editor !== null ? (
+        <div className={css.overlay} style={{ zIndex: 1100 }}>
+          <div className={`${css.card} ${css.editorCard}`} role="dialog" aria-modal="true">
+            <p className={css.title}>{t('manager.editPromptTitle')}</p>
+
+            <div>
+              <span className={css.label}>{t('manager.labelField')}</span>
+              <input
+                className={css.smallInput}
+                value={editor.label}
+                placeholder={t('manager.labelField')}
+                onChange={(e) => setEditor((prev) => (prev === null ? prev : { ...prev, label: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <span className={css.label}>{t('manager.textField')}</span>
+              <textarea
+                className={css.textarea}
+                style={{ minHeight: 300, resize: 'vertical' }}
+                value={editor.text}
+                placeholder={t('manager.textField')}
+                onChange={(e) => setEditor((prev) => (prev === null ? prev : { ...prev, text: e.target.value }))}
+                spellCheck={false}
+                autoFocus
+              />
+            </div>
+
+            <div className={css.actions}>
+              <span className={css.hint}>{t('manager.editPromptHint')}</span>
+              <span className={css.spacer} />
+              <button type="button" className={css.button} onClick={() => setEditor(null)}>{t('manager.cancel')}</button>
+              <button
+                type="button"
+                className={css.primary}
+                disabled={editor.label.trim() === '' && editor.text.trim() === ''}
+                onClick={commitEditor}
+              >
+                {t('manager.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }
 

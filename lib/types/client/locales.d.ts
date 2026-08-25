@@ -50,6 +50,8 @@ export declare const zh: {
     'manager.importError': string;
     'manager.exportHint': string;
     'manager.dirty': string;
+    'manager.editPromptTitle': string;
+    'manager.editPromptHint': string;
 };
 export declare const en: {
     'dock.title': string;
@@ -99,5 +101,7 @@ export declare const en: {
     'manager.importError': string;
     'manager.exportHint': string;
     'manager.dirty': string;
+    'manager.editPromptTitle': string;
+    'manager.editPromptHint': string;
 };
 export type QuickPromptsKey = keyof typeof zh;

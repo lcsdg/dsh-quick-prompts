@@ -479,6 +479,11 @@
   height: min(640px, calc(100vh - 96px));
 }
 
+/* dedicated prompt editor dialog: wide + tall textarea */
+.editorCard {
+  width: min(640px, calc(100vw - 48px));
+}
+
 .managerSplit {
   display: flex;
   flex-direction: row;

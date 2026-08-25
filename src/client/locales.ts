@@ -51,6 +51,8 @@ export const zh = {
   'manager.importError': '导入失败：{reason}',
   'manager.exportHint': '导出为 JSON 文件，可分享给其他人导入',
   'manager.dirty': '有未保存的修改',
+  'manager.editPromptTitle': '编辑指令',
+  'manager.editPromptHint': '修改仅在点击保存后生效',
 }
 
 export const en = {
@@ -101,6 +103,8 @@ export const en = {
   'manager.importError': 'Import failed: {reason}',
   'manager.exportHint': 'Exports a JSON file you can share with others',
   'manager.dirty': 'You have unsaved changes',
+  'manager.editPromptTitle': 'Edit prompt',
+  'manager.editPromptHint': 'Changes apply when you save',
 }
 
 export type QuickPromptsKey = keyof typeof zh
