@@ -296,6 +296,15 @@
 }
 
 /* read-only preview box: scrolls, never grows the modal */
+.previewWrap {
+  position: relative;
+}
+
+.previewWrap .previewBox,
+.previewWrap textarea {
+  padding-right: 44px;
+}
+
 .previewBox {
   box-sizing: border-box;
   width: 100%;
@@ -314,6 +323,37 @@
   white-space: pre-wrap;
   word-break: break-word;
   user-select: text;
+}
+
+/* floating edit toggle: pinned to the top-right of the text area, orange so
+   it cannot be missed */
+.previewEdit {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid rgb(245 158 11 / 0.45);
+  border-radius: 7px;
+  background: rgb(245 158 11 / 0.14);
+  color: var(--qp-orange, #f59e0b);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.previewEdit:hover {
+  background: rgb(245 158 11 / 0.24);
+  border-color: var(--qp-orange-bright, #fbbf24);
+  color: var(--qp-orange-bright, #fbbf24);
+}
+
+.previewEdit .icon {
+  width: 15px;
+  height: 15px;
 }
 
 .smallInput {

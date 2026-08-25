@@ -80,11 +80,22 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
         </div>
 
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 0 4px' }}>
-            <span className={css.label} style={{ margin: 0, flex: 'auto' }}>{t('preview.textHint')}</span>
+          <span className={css.label}>{t('preview.textHint')}</span>
+          <div className={css.previewWrap}>
+            {editing ? (
+              <textarea
+                className={css.textarea}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                spellCheck={false}
+                ref={textareaRef}
+              />
+            ) : (
+              <pre className={css.previewBox}>{text}</pre>
+            )}
             <button
               type="button"
-              className={css.iconButton}
+              className={css.previewEdit}
               title={editing ? t('preview.done') : t('preview.edit')}
               aria-label={editing ? t('preview.done') : t('preview.edit')}
               onClick={() => setEditing((v) => !v)}
@@ -101,17 +112,6 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
               )}
             </button>
           </div>
-          {editing ? (
-            <textarea
-              className={css.textarea}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              spellCheck={false}
-              ref={textareaRef}
-            />
-          ) : (
-            <pre className={css.previewBox}>{text}</pre>
-          )}
         </div>
 
         {placeholders.length > 0 ? (
