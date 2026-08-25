@@ -240,10 +240,10 @@
 .card {
   box-sizing: border-box;
   width: min(580px, calc(100vw - 48px));
-  max-height: min(720px, calc(100vh - 64px));
+  max-height: min(760px, calc(100vh - 32px));
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   padding: 16px;
   border: 1px solid var(--dsw-alias-border-l1);
   border-radius: 12px;
@@ -447,7 +447,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 1 1 300px;
   min-height: 0;
 }
 
@@ -474,7 +474,7 @@
 .highlightFront {
   position: relative;
   flex: 1 1 auto;
-  min-height: 120px;
+  min-height: 160px;
   background: transparent;
   color: transparent;
   /* orange caret: clearly visible on both light and dark themes */

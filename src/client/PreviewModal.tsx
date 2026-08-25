@@ -82,8 +82,8 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
       <div className={`${css.card} ${css.previewCard}`} role="dialog" aria-modal="true">
         <p className={css.title}>{t('preview.title')}</p>
 
-        <div className={css.fieldSection}>
-          <span className={css.label}>{t('preview.label')}</span>
+        <div className={css.fieldSection} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <span className={css.label} style={{ margin: 0, flex: 'none' }}>{t('preview.label')}</span>
           <input
             className={css.smallInput}
             value={item.label}

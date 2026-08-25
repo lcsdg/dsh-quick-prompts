@@ -430,8 +430,8 @@ export function ManagerModal(props: ManagerModalProps): React.JSX.Element {
           <div className={`${css.card} ${css.editorCard}`} role="dialog" aria-modal="true">
             <p className={css.title}>{t('manager.editPromptTitle')}</p>
 
-            <div className={css.fieldSection}>
-              <span className={css.label}>{t('manager.labelField')}</span>
+            <div className={css.fieldSection} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <span className={css.label} style={{ margin: 0, flex: 'none' }}>{t('manager.labelField')}</span>
               <input
                 className={css.smallInput}
                 value={editor.label}
