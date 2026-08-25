@@ -60,7 +60,7 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
 
   return (
     <div className={css.overlay} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}>
-      <div className={css.card} role="dialog" aria-modal="true">
+      <div className={`${css.card} ${css.previewCard}`} role="dialog" aria-modal="true">
         <p className={css.title}>{t('preview.title')}</p>
 
         <div>
@@ -77,6 +77,7 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
           <span className={css.label}>{t('preview.textHint')}</span>
           <textarea
             className={css.textarea}
+            style={{ minHeight: 300, resize: 'vertical' }}
             value={text}
             onChange={(e) => setText(e.target.value)}
             autoFocus

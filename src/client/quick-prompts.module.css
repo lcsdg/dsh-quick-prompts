@@ -252,6 +252,12 @@
   animation: quickPromptsPop 160ms ease;
 }
 
+/* preview modal: wide so the editable template shows plenty of text */
+.previewCard {
+  width: min(720px, calc(100vw - 48px));
+  overflow-y: auto;
+}
+
 @keyframes quickPromptsPop {
   from { opacity: 0; transform: translateY(6px) scale(0.98); }
   to { opacity: 1; transform: translateY(0) scale(1); }
