@@ -14,6 +14,8 @@ export declare const zh: {
     'preview.title': string;
     'preview.label': string;
     'preview.textHint': string;
+    'preview.edit': string;
+    'preview.done': string;
     'preview.placeholderSection': string;
     'preview.placeholderEmpty': string;
     'preview.appendMode': string;
@@ -61,6 +63,8 @@ export declare const en: {
     'preview.title': string;
     'preview.label': string;
     'preview.textHint': string;
+    'preview.edit': string;
+    'preview.done': string;
     'preview.placeholderSection': string;
     'preview.placeholderEmpty': string;
     'preview.appendMode': string;
