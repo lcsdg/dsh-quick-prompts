@@ -6,24 +6,27 @@ A row of user-defined prompt chips above the composer. Click a chip to preview/e
 
 ## 功能 / Features
 
-- **点击胶囊** → 预览弹窗：可编辑指令全文（本次点击内的临时草稿，**不修改已保存的指令**），填写 `{{占位符}}` 参数，然后：
-  - **同步到输入框**：填入输入框末尾（可勾选改为覆盖输入框已有内容），发送前仍可再改
-  - **直接发送**：跳过输入框，立即作为用户消息发送
-- **胶囊右侧纸飞机（悬停浮现）** → 一键直接发送；若指令含占位符则自动转入预览弹窗填写
-- **⚙️ 管理**：增、删、改、排序、**导入/导出 JSON**（方便分享给他人）
-- 内置 4 个示例指令（审查改动 / 路径分析 / 写注释 / 生成测试），可随意删改
+- **点胶囊** → 预览弹窗：编辑指令全文（本次草稿，不改已保存指令）、填写 `{{占位符}}`、**同步到输入框**或**直接发送**
+- **胶囊旁纸飞机** → 一键直接发送；指令含占位符时自动转预览填写
+- **⚙️ 管理弹窗**：左侧功能区（增/删/改名/计数），右侧该功能下的指令（新增/编辑/删除/↑↓排序）
+- **编辑弹窗**：大文本区 + 占位符**橙色高亮**，改动点保存才生效
+- **删除确认**：删功能会连同其下指令一并删除（不会丢到"未分类"）
+- **分类记忆**：每个会话独立记住当前选中的功能，切换窗口不丢
+- 指令存官方 settings 文档（`ctx.settingsScope`）+ **导入/导出 JSON**，清浏览器缓存不丢失
 
 ## 安装 / Install
 
+在已初始化的 DSH profile 中执行（把 `web` 换成你的 profile 名）：
+
 ```bash
-git clone https://github.com/lcsdg/dsh-quick-prompts.git
-cd dsh-quick-prompts
-pnpm install
-pnpm build
-dsh plugin --profile web add link:$(pwd)
+# 方式一：npm（推荐，一条命令）
+dsh plugin --profile web add @lcsdg/dsh-quick-prompts
+
+# 方式二：Git
+dsh plugin --profile web add git@github.com:lcsdg/dsh-quick-prompts.git
 ```
 
-安装后**刷新 Web GUI 页面**即可看到输入区上方的指令行（无需重启 dsh）。
+安装后**刷新 Web GUI 页面**即可看到输入区上方的指令行（host 半区需要重启 dsh 进程才会完整加载）。
 
 ## 配置说明 / Configuration
 
@@ -31,13 +34,16 @@ dsh plugin --profile web add link:$(pwd)
 
 ```json
 {
+  "categories": [
+    { "id": "review", "name": "代码审查" }
+  ],
   "prompts": [
-    { "id": "review-changes", "label": "审查当前改动", "text": "审查当前 git 改动…" }
+    { "id": "review-changes", "label": "审查当前改动", "text": "审查当前 git 改动…", "categoryId": "review" }
   ]
 }
 ```
 
-`text` 中的 `{{任意名字}}` 会成为预览弹窗里的填写字段，同步/发送时替换为填写值；未填写的占位符原样保留。
+`text` 中的 `{{任意名字}}` 会成为预览弹窗里的填写字段（**橙色高亮**），同步/发送时替换为填写值；未填写的占位符原样保留。
 
 ## 开发 / Development
 
