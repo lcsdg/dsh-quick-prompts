@@ -1,3 +1,6 @@
 node_modules/
 *.log
 .DS_Store
+# Local pnpm store: some sandboxes redirect the content-addressable store into
+# the project root, and it must never be committed.
+.pnpm-store/

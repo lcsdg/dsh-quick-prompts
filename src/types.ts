@@ -76,5 +76,9 @@ export function normalizeSettings(raw: QuickPromptsSettings | undefined): QuickP
   return { categories, prompts }
 }
 
-/** Stable settings namespace (spelled identically in the host entry). */
-export const QUICK_PROMPTS_NAMESPACE = 'quick-prompts'
+/**
+ * The Host plugin entry id whose volatile fields carry this section. The
+ * client reaches the values through `ctx.configForms.get(QUICK_PROMPTS_ENTRY_ID)`;
+ * it must match the `id` of the quick-prompts row in cordis.patch.yml.
+ */
+export const QUICK_PROMPTS_ENTRY_ID = 'quick-prompts'

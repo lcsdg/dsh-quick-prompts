@@ -6,7 +6,7 @@
 
 **把常用指令做成输入框上方的一排胶囊，点一下就填好、就能发。** 少打字，少重复复述需求。
 
-快捷指令面板 —— DSH Web GUI 输入区上方的一排指令胶囊。点击胶囊预览并编辑指令（支持 `{{占位符}}`），同步到输入框或直接发送。指令存储在官方 settings 文档（`ctx.settingsScope`），**清除浏览器缓存不会丢失**。
+快捷指令面板 —— DSH Web GUI 输入区上方的一排指令胶囊。点击胶囊预览并编辑指令（支持 `{{占位符}}`），同步到输入框或直接发送。指令存储在官方 settings 文档（插件 `Config` 的 volatile 字段，经 `ctx.configForms` 读写），**清除浏览器缓存不会丢失**。
 
 A row of user-defined prompt chips above the composer. Click a chip to preview/edit its template (with `{{placeholder}}` fields), then sync it into the input or send directly. Prompts live in the official settings document — browser cache clears never touch them.
 
@@ -24,7 +24,7 @@ A row of user-defined prompt chips above the composer. Click a chip to preview/e
 - **编辑弹窗**：大文本区 + 占位符**橙色高亮**，改动点保存才生效
 - **删除确认**：删功能会连同其下指令一并删除（不会丢到"未分类"）
 - **分类记忆**：每个会话独立记住当前选中的功能，切换窗口不丢
-- 指令存官方 settings 文档（`ctx.settingsScope`）+ **导入/导出 JSON**，清浏览器缓存不丢失
+- 指令存官方 settings 文档（`Config` volatile 字段）+ **导入/导出 JSON**，清浏览器缓存不丢失
 
 ## 安装 / Install
 
@@ -42,7 +42,7 @@ dsh plugin --profile web add git@github.com:lcsdg/dsh-quick-prompts.git
 
 ## 配置说明 / Configuration
 
-指令列表保存在 settings namespace `quick-prompts`（schema 驱动，官方设置页同样可见）。结构：
+指令列表保存在 `quick-prompts` 插件条目的 `Config` 中（`categories`/`prompts` 两个 volatile 字段，官方设置页同样可见）。结构：
 
 ```json
 {
@@ -66,7 +66,7 @@ pnpm typecheck
 
 结构：
 
-- `src/index.ts` — host 半区：注册 `quick-prompts` settings namespace（schemastery schema + 示例指令作为 base 层）
+- `src/index.ts` — host 半区：导出 `Config` schema（`categories`/`prompts` 均 `.volatile()`，内置示例指令作为 schema 默认值）
 - `src/client/` — 浏览器半区：`conversation.input.dock` slot（order 100）
   - `QuickPromptsDock.tsx` — dock 行（胶囊 + 悬停发送 + 齿轮）
   - `PreviewModal.tsx` — 预览/编辑弹窗（占位符填写、追加/覆盖、同步/发送）

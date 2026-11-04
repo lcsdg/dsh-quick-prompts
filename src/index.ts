@@ -1,66 +1,23 @@
 /**
  * Host loader entry for the dsh-quick-prompts plugin — runs in the DSH host
- * process. Registers the `quick-prompts` settings namespace (schemastery
- * schema + built-in starter prompts as the composition base layer) through
- * the official settings service, so prompt lists survive browser cache
- * clears and live in the user's settings document. The browser half
- * (src/client) renders the composer dock and edits this namespace.
+ * process.
+ *
+ * Since DSH 0.2.x a plugin's `Config` schema *is* its settings section: the
+ * settings surface renders every `.volatile()` field of the active profile
+ * entry, and the browser half reads/writes that same entry through
+ * `ctx.configForms`. The old `installSettingsSection(namespace, ...)` seam is
+ * gone, so there is no namespace to register and no `apply()` work to do here
+ * — exporting `Config` is the whole host contract.
+ *
+ * The browser half (src/client) renders the composer dock and edits this
+ * config; starter prompts ship as the composition base layer (the entry's
+ * defaults in cordis.patch.yml), so a user clearing a field re-inherits them.
  */
-import type { Context } from '@deepseek-ai/cordis'
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
-import z from 'schemastery'
+import z from '@deepseek-ai/schemastery'
+import type { PromptCategory, PromptItem, QuickPromptsSettings } from './types.ts'
 
 /** Stable cordis plugin row name (matches cordis.patch.yml). */
 export const name = 'quick-prompts'
-
-/**
- * Settings namespace of the quick-prompts capability. Spelled here rather
- * than imported so the browser half can spell the same value without
- * depending on a Host package.
- */
-export const QUICK_PROMPTS_SETTINGS_NAMESPACE = settingsNamespace('quick-prompts')
-
-/** A feature group: a stable id plus a user-renamable display name. */
-export interface PromptCategory {
-  /** Stable unique id; prompts reference it via categoryId. */
-  id: string
-  /** Display name (editable in the manager). */
-  name: string
-}
-
-/** One prompt entry: unique id, chip label and the prompt template text. */
-export interface PromptItem {
-  /** Stable unique id (kept when the user edits label/text). */
-  id: string
-  /** Chip label shown in the composer dock. */
-  label: string
-  /** Prompt template; `{{name}}` spans become fill-in fields in the preview. */
-  text: string
-  /** Id of the feature this prompt belongs to; '' = uncategorized. */
-  categoryId: string
-}
-
-/** The quick-prompts settings section: features plus the prompt list. */
-export interface QuickPromptsSettings {
-  /** Ordered feature list (dock tabs / manager left rail). */
-  categories: PromptCategory[]
-  /** Ordered prompt list (each prompt belongs to a categoryId). */
-  prompts: PromptItem[]
-}
-
-/** Schema for the settings section (validated against the stored document). */
-export const Config: z<QuickPromptsSettings> = z.object({
-  categories: z.array(z.object({
-    id: z.string(),
-    name: z.string(),
-  })).default([]),
-  prompts: z.array(z.object({
-    id: z.string(),
-    label: z.string(),
-    text: z.string(),
-    categoryId: z.string().default(''),
-  })).default([]),
-})
 
 /** Starter features shipped as the composition base layer (user-overridable). */
 export const DEFAULT_CATEGORIES: PromptCategory[] = [
@@ -105,17 +62,29 @@ export const DEFAULT_PROMPTS: PromptItem[] = [
 ]
 
 /**
- * Apply the host half: register the settings section. The section's
- * composition base carries the starter features and prompts; the web
- * settings surface (schema-driven) and the quick-prompts dock both edit the
- * same namespace.
- * @param ctx - host plugin context.
+ * Config schema for the quick-prompts settings section.
+ *
+ * Both lists are `.volatile()`: the settings service only projects volatile
+ * fields into an editable form (`volatileForm` skips every other field), and
+ * the client's `configForms` form can only write volatile paths. A volatile
+ * array may not contain nested volatile fields, so the element schemas are
+ * left plain.
+ *
+ * No declared `z<QuickPromptsSettings>` annotation: `.volatile()` makes each
+ * field's OUTPUT a `Volatile<T>` wrapper (read through `.get()`), so the
+ * schema is deliberately not assignable to the plain interface. The browser
+ * half already treats the wire section as `QuickPromptsSettings` through
+ * `configForms.get<QuickPromptsSettings>()`, which is the seam that unwraps.
  */
-export function apply(ctx: Context): void {
-  installSettingsSection(ctx, QUICK_PROMPTS_SETTINGS_NAMESPACE, Config, { categories: DEFAULT_CATEGORIES, prompts: DEFAULT_PROMPTS }, {
-    // The dock reads the live value through the settings scope; nothing on
-    // the host side reacts to prompt edits.
-    setSource: () => {},
-    onChange: () => {},
-  })
-}
+export const Config = z.object({
+  categories: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+  })).default(DEFAULT_CATEGORIES).volatile(),
+  prompts: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    text: z.string(),
+    categoryId: z.string().default(''),
+  })).default(DEFAULT_PROMPTS).volatile(),
+})

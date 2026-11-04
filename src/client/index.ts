@@ -3,24 +3,25 @@
  *
  * Mounts one conversation surface: the `conversation.input.dock` row of
  * prompt chips above the composer. The prompt list is read from (and written
- * through) the `quick-prompts` settings namespace via ctx.settingsScope, so
- * it persists in the host settings document — browser cache clears never
- * touch it.
+ * through) the volatile `Config` fields of the `quick-prompts` Host entry via
+ * `ctx.configForms`, so it persists in the host settings document — browser
+ * cache clears never touch it, and the settings page edits the same values.
  *
  * Failure policy: nothing here throws at apply time — an external plugin
  * must never take the GUI down.
  */
-import type { ClientContext, SessionId, SettingsScope } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ClientContext, SessionId, SettingsScope, SettingsScopeSnapshot } from '@deepseek-ai/dsh-client-runtime/client'
+import type { ConfigForm } from '@deepseek-ai/dsh-client-ui-settings/client'
 // Type-only: pulls the locale plugin's Context merge (ctx.locale).
 import type {} from '@deepseek-ai/dsh-client-locale/client'
 // Type-only: pulls the ui-conversation SlotMap merge (conversation.* slots)
-// and the settingsScope Context merge (ctx.settingsScope).
+// and the configForms Context merge (ctx.configForms).
 import type {} from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type {} from '@deepseek-ai/dsh-client-ui-settings/client'
 import { claimQuickPromptsApply, releaseQuickPromptsApply } from './apply-guard.ts'
 import { QuickPromptsDock, type QuickPromptsInjected } from './QuickPromptsDock.tsx'
 import { en, zh, type QuickPromptsKey } from './locales.ts'
-import type { QuickPromptsSettings } from '../types.ts'
+import { QUICK_PROMPTS_ENTRY_ID, type QuickPromptsSettings } from '../types.ts'
 
 /** Locale namespace this plugin owns. */
 const NS = 'quick-prompts'
@@ -33,7 +34,7 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
 }
 
 /** Services required by this plugin. */
-export const inject = ['slots', 'locale', 'settingsScope', 'conversation', 'sessions']
+export const inject = ['slots', 'locale', 'configForms', 'conversation', 'sessions']
 
 /**
  * Runtime face of the per-session input shell we need (the shipped
@@ -47,9 +48,38 @@ interface InputShellFace {
   state: { getSnapshot(): { draft: string } }
 }
 
-/** Minimal binder face (webUiSettings and settingsScope share this shape). */
-interface SettingsBinderFace {
-  bind<T>(spec: { namespace: string }): SettingsScope<T>
+/**
+ * Adapt the shared ConfigForm for this section to the SettingsScope shape the
+ * dock and manager already consume.
+ *
+ * The snapshots are wire-compatible (a ConfigFormSnapshot carries the same
+ * status/value/base/user/revision/writable fields as a SettingsScopeSnapshot),
+ * and `set`/`unset` keep their scalar-field signatures. The ONE behavioural
+ * difference is the write result: a SettingsScope rejected write only ever
+ * threw, while a ConfigForm reports a Host refusal (stale revision, invalid
+ * field) as `false` and reserves rejection for transport failure. The manager
+ * detects failure purely by catching, so that boolean must be turned back into
+ * a throw here — otherwise a refused save would close the dialog as if it had
+ * been stored, silently discarding the edit.
+ * @param form - the config form bound to the quick-prompts Host entry.
+ * @returns the section scope handed to the dock.
+ */
+function bindSectionScope(form: ConfigForm<QuickPromptsSettings>): SettingsScope<QuickPromptsSettings> {
+  /** Raise a refused write as the rejection callers already handle. */
+  const assertAccepted = (accepted: boolean, field: string): void => {
+    if (accepted) return
+    throw new Error(`quick-prompts: the settings host refused the "${field}" write`)
+  }
+  return {
+    getSnapshot: () => form.getSnapshot() as SettingsScopeSnapshot<QuickPromptsSettings>,
+    subscribe: (listener) => form.subscribe(listener),
+    set: async (field: string, value: unknown) => {
+      assertAccepted(await form.set(field, value), field)
+    },
+    unset: async (field: string) => {
+      assertAccepted(await form.unset(field), field)
+    },
+  }
 }
 
 /**
@@ -70,10 +100,10 @@ export function apply(ctx: ClientContext): void {
     }
   }, 'quick-prompts: dictionaries')
 
-  // The web settings surface may provide a newer binder under a different
-  // name; fall back to the standard settingsScope service either way.
-  const binder = (ctx.get('webUiSettings') ?? ctx.settingsScope) as SettingsBinderFace
-  const scope = binder.bind<QuickPromptsSettings>({ namespace: 'quick-prompts' })
+  // The form derives from the one shared describe mirror, so binding adds no
+  // wire read of its own. Until the Host serves this entry the snapshot stays
+  // `loading`/`unavailable` and the dock renders nothing.
+  const scope = bindSectionScope(ctx.configForms.get<QuickPromptsSettings>(QUICK_PROMPTS_ENTRY_ID))
 
   /** Place text into one session's composer input (append or replace). */
   const insertIntoInput = (sessionId: SessionId, text: string, mode: 'append' | 'replace'): void => {

@@ -3,10 +3,15 @@
 # manifest field); install with
 # `dsh plugin --profile web add @max1997/dsh-quick-prompts`.
 #
-# The row is a bare plugin by package name: the node half (exports ".") runs
-# in the host process (registers the quick-prompts settings namespace), and
-# the `dsh.client` declaration in package.json makes the browser half
-# (exports "./client") load in the web GUI.
+# The row is a bare plugin by package name: the node half (exports ".") carries
+# the Config schema — since DSH 0.2.x a plugin's volatile Config fields ARE its
+# settings section — and the `dsh.client` declaration in package.json makes the
+# browser half (exports "./client") load in the web GUI, where it reads and
+# writes that same entry through ctx.configForms.
+#
+# IMPORTANT: the row `id` is the settings namespace the browser half binds
+# (`QUICK_PROMPTS_ENTRY_ID` in src/types.ts). Renaming it here without updating
+# the client leaves the dock waiting on a namespace nobody serves.
 #
 # NOTE: `name` must be the *published import specifier* (the scoped package
 # name). Cordis imports it verbatim, so an unscoped shorthand here would make
