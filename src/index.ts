@@ -6,13 +6,17 @@
  * settings surface renders every `.volatile()` field of the active profile
  * entry, and the browser half reads/writes that same entry through
  * `ctx.configForms`. The old `installSettingsSection(namespace, ...)` seam is
- * gone, so there is no namespace to register and no `apply()` work to do here
- * — exporting `Config` is the whole host contract.
+ * gone, so there is no namespace to register — but `apply` MUST still be
+ * exported: cordis only accepts a module as a plugin when it resolves to a
+ * function or a `{ apply }` object (`isApplicable`), and a module whose host
+ * half exports only `Config` resolves to `undefined`, leaving the entry with
+ * no fiber and surfacing as "failed to import".
  *
  * The browser half (src/client) renders the composer dock and edits this
  * config; starter prompts ship as the composition base layer (the entry's
- * defaults in cordis.patch.yml), so a user clearing a field re-inherits them.
+ * schema defaults), so a user clearing a field re-inherits them.
  */
+import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { PromptCategory, PromptItem, QuickPromptsSettings } from './types.ts'
 
@@ -88,3 +92,15 @@ export const Config = z.object({
     categoryId: z.string().default(''),
   })).default(DEFAULT_PROMPTS).volatile(),
 })
+
+/**
+ * Activate the host half.
+ *
+ * Intentionally empty. The host owns no runtime behaviour any more — the
+ * section's values live entirely in this entry's volatile Config, which the
+ * settings service reads straight off the fiber. It exists so cordis can
+ * resolve the module as a plugin at all; see the module comment.
+ */
+export function apply(_ctx: Context): void {
+  // No host-side wiring: the Config above is the whole contract.
+}
