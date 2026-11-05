@@ -250,16 +250,23 @@
   background: var(--dsw-alias-bg-base, var(--dsw-alias-fill-primary));
   box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
   animation: quickPromptsPop 160ms ease;
+  /* The overlay centers this card with align-items: center. A flex item
+     taller than its container overflows in BOTH directions when centered,
+     so the top and the bottom (where the action row lives) get clipped by
+     the viewport with no way to scroll to them. Shrinking to the overlay's
+     height and letting the children do the scrolling keeps the whole card
+     reachable. */
+  min-height: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
 }
 
 /* preview modal: wide so the editable template shows plenty of text.
-   Scrolling belongs to the editor area, NOT to the card. `overflow-y: auto`
-   on a flex column makes the browser lay children out at their content
-   height instead of the available height, so the `flex: 1 1 300px` editor
-   stops shrinking, pushes the action row (取消 / 同步到输入框 / 发送) past
-   the card's max-height and clips it behind the card's own scrollbar.
-   Keeping the card non-scrolling restores the contract documented above
-   .highlightWrap: the editor shrinks, the buttons stay on screen. */
+   The card is a flex column capped by .card's max-height; the editor absorbs
+   the slack (.editorSection) and the action row stays pinned below it. The
+   row is `flex: none` with its own stacking context so that, even if a
+   future change lets the column overflow, the buttons render above the
+   scrolling content instead of being clipped behind it. */
 .previewCard {
   width: min(720px, calc(100vw - 48px));
   overflow: hidden;
@@ -492,7 +499,11 @@
 .highlightFront {
   position: relative;
   flex: 1 1 auto;
-  min-height: 160px;
+  /* Floor of 160px would win over the shrink chain and force the editor back
+     to full height whenever the modal is short — the action row then falls
+     out of the card again. Keep a usable minimum that still yields to
+     `.editorSection`'s min-height: 0. */
+  min-height: 0;
   background: transparent;
   color: transparent;
   /* orange caret: clearly visible on both light and dark themes */
@@ -517,6 +528,12 @@
   align-items: center;
   gap: 8px;
   justify-content: flex-end;
+  /* Never let the editor's flex growth squeeze this row out of the card:
+     without `flex: none` the row is a shrinkable flex item and gets
+     compressed to zero height when the editor asks for its full basis. */
+  flex: none;
+  position: relative;
+  z-index: 1;
 }
 
 .spacer {
@@ -550,8 +567,15 @@
 .primary {
   appearance: none;
   border: none;
-  background: var(--dsw-alias-accent);
-  color: var(--dsw-alias-text-on-accent, #fff);
+  /* `--dsw-alias-accent` / `--dsw-alias-text-on-accent` do not exist in the
+     desktop theme (it ships 418 `--dsw-*` aliases, and the accent pair is not
+     among them). Without a fallback the declaration is dropped, the button
+     loses its fill, and `color` falls back to #fff — white text on a white
+     card, i.e. an invisible button. Bind to the real primary-button aliases
+     and keep a literal fallback so the controls stay visible even if the
+     theme renames them again. */
+  background: var(--dsw-alias-button-primary-fill, #4d6bfe);
+  color: var(--dsw-alias-label-primary-inverted, #fff);
   font: inherit;
   font-size: 12px;
   font-weight: 500;
