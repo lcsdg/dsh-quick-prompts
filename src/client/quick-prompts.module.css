@@ -252,10 +252,17 @@
   animation: quickPromptsPop 160ms ease;
 }
 
-/* preview modal: wide so the editable template shows plenty of text */
+/* preview modal: wide so the editable template shows plenty of text.
+   Scrolling belongs to the editor area, NOT to the card. `overflow-y: auto`
+   on a flex column makes the browser lay children out at their content
+   height instead of the available height, so the `flex: 1 1 300px` editor
+   stops shrinking, pushes the action row (取消 / 同步到输入框 / 发送) past
+   the card's max-height and clips it behind the card's own scrollbar.
+   Keeping the card non-scrolling restores the contract documented above
+   .highlightWrap: the editor shrinks, the buttons stay on screen. */
 .previewCard {
   width: min(720px, calc(100vw - 48px));
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* one bordered card per functional area inside the modals — border and
@@ -276,6 +283,17 @@
 .actionsDivider {
   border-top: 1px solid color-mix(in srgb, var(--dsw-alias-label-primary, #0f1115) 16%, transparent);
   padding-top: 12px;
+}
+
+/* The editor's section owns the modal's leftover height. Without this the
+   section keeps its content height (default flex-shrink lets the CONTENT win,
+   since the child textarea carries a 300px flex-basis) and the action row is
+   pushed out of the card. Consuming the slack here — with min-height: 0 so
+   the inner scroll layers can actually shrink — keeps the buttons visible. */
+.editorSection {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 @keyframes quickPromptsPop {

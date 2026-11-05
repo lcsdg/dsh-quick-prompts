@@ -92,7 +92,7 @@ export function PreviewModal(props: PreviewModalProps): React.JSX.Element {
           />
         </div>
 
-        <div className={css.fieldSection}>
+        <div className={`${css.fieldSection} ${css.editorSection}`}>
           <span className={css.label}>{t('preview.textHint')}</span>
           <div className={css.highlightWrap}>
             <pre ref={backRef} className={css.highlightBack} aria-hidden="true">{renderHighlighted(text)}</pre>
